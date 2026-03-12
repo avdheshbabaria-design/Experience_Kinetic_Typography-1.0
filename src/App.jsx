@@ -692,8 +692,8 @@ export default function App() {
         </div>
       </div>
 
-      {/* Settings Panel Overlay */}
-      <div className={`absolute right-6 top-1/2 transform -translate-y-1/2 bg-black/70 backdrop-blur-3xl border border-white/10 rounded-3xl w-80 z-[60] shadow-2xl transition-all duration-500 max-h-[90vh] flex flex-col ${showSettings ? 'opacity-100 translate-x-0 pointer-events-auto' : 'opacity-0 translate-x-12 pointer-events-none'}`}>
+      {/* Settings Panel Overlay - BULLETPROOF SCROLL FIX */}
+      <div className={`absolute right-6 top-8 bottom-28 bg-black/70 backdrop-blur-3xl border border-white/10 rounded-3xl w-80 z-[60] shadow-2xl transition-all duration-500 flex flex-col ${showSettings ? 'opacity-100 translate-x-0 pointer-events-auto' : 'opacity-0 translate-x-12 pointer-events-none'}`}>
         
         {/* Fixed Header & Close Button (Does not scroll) */}
         <div className="flex-shrink-0 pt-6 px-6 pb-4 relative z-10 border-b border-white/5">
@@ -874,7 +874,6 @@ export default function App() {
               <input type="range" min="0" max="10" value={settings.glitchLevel} onChange={(e) => setSettings({...settings, glitchLevel: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'glitchLevel', 2)} className="w-full accent-red-400" />
             </div>
 
-            {/* 🔥 NEW: Chaos Overdrive Engine */}
             <div className="flex flex-col gap-1 mt-2 p-3 bg-red-900/20 border border-red-500/30 rounded-xl">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-[10px] opacity-80 uppercase font-bold text-red-400">Chaos Overdrive</span>
