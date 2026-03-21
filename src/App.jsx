@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Maximize, Minimize, AlertCircle, Sliders, Activity, Zap, Type, Globe, Camera, MonitorPlay, X, Save, Bookmark, Video, Square, Layers } from 'lucide-react';
 
 // --- CSS STYLES & FONTS ---
-const globalStyles = `
+const getGlobalStyles = (speed) => `
   @import url('https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Bodoni+Moda:ital,opsz,wght@0,6..96,900;1,6..96,900&family=Montserrat:ital,wght@0,900;1,900&family=VT323&family=Noto+Sans+Devanagari:wght@900&family=Noto+Sans+Gujarati:wght@900&display=swap');
+
+  .kinetic-wrapper { --speed: ${speed || 1}; }
 
   .font-anton { font-family: 'Anton', sans-serif; text-transform: uppercase; }
   .font-bebas { font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; }
@@ -34,7 +36,7 @@ const globalStyles = `
   .word-inner {
     animation: wordAppear calc(0.6s / var(--speed, 1)) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     display: inline-block;
-    position: relative; /* Fixed layout bounding issues */
+    position: relative; 
   }
 
   @keyframes glitch-anim {
@@ -57,7 +59,6 @@ const globalStyles = `
     -webkit-text-stroke: var(--outline-width, 0.04em) var(--outline-color, #FFF);
   }
 
-  /* Fixed Highlight Frenzy Bug by moving to .word-inner */
   .text-highlight-fx::before {
     content: ''; position: absolute; inset: -0.05em -0.1em;
     background-color: var(--hl-color, rgba(255,255,255,0.2)); opacity: var(--hl-op, 0.8);
@@ -110,6 +111,7 @@ const FONTS_ALL = [...FONTS_DYNAMIC, 'font-arial', 'font-times', 'font-courier',
 const SIZES = [80, 150, 250, 400, 600, 800]; 
 const COLORS_VAPOR = ['#FF00FF', '#00FFFF', '#FFB6C1', '#FFFFFF', '#39FF14', '#FDF5E6'];
 const COLORS_STD = ['#FFFFFF', '#FFFFFF', '#E63946', '#F4A261', '#A8DADC'];
+const COLORS_LIGHT_BG = ['#000000', '#1A1A1A', '#E63946', '#1D3557', '#457B9D'];
 const ROTATIONS = [0, 0, 0, 90, -90, 5, -5, 10, -10];
 const DIRECTIONS = ['right', 'bottom', 'diagonal-down', 'diagonal-up', 'overlap'];
 const SHAPE_TYPES = ['circle', 'square', 'triangle', 'cross', 'asterisk'];
@@ -150,28 +152,39 @@ const DEFAULT_BASE_SETTINGS = {
   physicsEnabled: true, momentumEnabled: true, strobeFlicker: false, neonGlow: true,
   fxOutline: false, fxShadow: false, fxHighlight: false, bgMode: 'dark',
   manualTextColor: '#FFFFFF', manualShadowColor: '#FF00FF', manualShadowOpacity: 0.8,
-  overdriveLevel: 0, // Chaos Engine (0 to 10)
-  textureOverlay: 'none', // none, halftone, crt, grunge
-  iconEngine: false // Abstract Geometry Backgrounds
+  customSystemFont: 'Arial',
+  chaosRgbLevel: 0, chaosVhsLevel: 0, chaosInvertLevel: 0, chaosShakeLevel: 0, 
+  textureOverlay: 'none', 
+  iconEngine: false, 
+  customBgUrl: '', customBgType: '' 
 };
 
 // --- PRESET LIBRARY ---
 const PRESET_LIBRARY = {
   "Default Mograph": { ...DEFAULT_BASE_SETTINGS },
-  "TikTok Overdrive": { aspectRatio: 'tiktok', cameraLens: '18mm', wordGrouping: 6, wordsPerLine: 2, textScale: 1.5, physicsEnabled: false, fontMode: 'manual', manualFont: 'font-bebas', fxShadow: true, overdriveLevel: 6, iconEngine: true },
+  "Subtle Natural Fade": { ...DEFAULT_BASE_SETTINGS, physicsEnabled: false, momentumEnabled: false, blurIntensity: 2, fadeRate: 0.05, animationSpeed: 0.5, fontMode: 'manual', manualFont: 'font-arial', neonGlow: false, fxShadow: false, glitchLevel: 0, cameraMode: 'manual', manualZoom: 1.1 },
+  "TikTok Overdrive": { aspectRatio: 'tiktok', cameraLens: '18mm', wordGrouping: 6, wordsPerLine: 2, textScale: 1.5, physicsEnabled: false, fontMode: 'manual', manualFont: 'font-bebas', fxShadow: true, chaosShakeLevel: 6, chaosRgbLevel: 4, iconEngine: true },
   "Comic Book": { fontMode: 'manual', manualFont: 'font-impact', textureOverlay: 'halftone', fxOutline: true, fxShadow: true, wordGrouping: 1, textScale: 1.5, bgMode: 'vaporwave', iconEngine: true },
   "Cinematic Trailer": { aspectRatio: 'cinema', cameraLens: '55mm', fontMode: 'manual', manualFont: 'font-bodoni', wordGrouping: 2, blurIntensity: 6, fadeRate: 0.1, textureOverlay: 'grunge' },
-  "Vaporwave CRT": { bgMode: 'vaporwave', fontMode: 'manual', manualFont: 'font-vt323', neonGlow: true, glitchLevel: 4, momentumEnabled: true, fxHighlight: true, textureOverlay: 'crt', overdriveLevel: 4 },
-  "Hacker Terminal": { bgMode: 'dark', fontMode: 'manual', manualFont: 'font-courier', wordGrouping: 6, textAlign: 'left', manualTextColor: '#39FF14', wordsPerLine: 6, textureOverlay: 'crt', overdriveLevel: 2 },
-  "Strobe Rave": { strobeFlicker: true, neonGlow: true, bgMode: 'plasma', fxHighlight: true, wordGrouping: 2, overdriveLevel: 10, iconEngine: true },
-  "Chroma Key Overlay": { bgMode: 'chroma-green', textureOverlay: 'none', overdriveLevel: 0, fxShadow: false, fxHighlight: false, glitchLevel: 0, neonGlow: false, fontMode: 'manual', manualFont: 'font-montserrat', textScale: 1.5, wordGrouping: 6 }
+  "Vaporwave CRT": { bgMode: 'vaporwave', fontMode: 'manual', manualFont: 'font-vt323', neonGlow: true, glitchLevel: 4, momentumEnabled: true, fxHighlight: true, textureOverlay: 'crt', chaosVhsLevel: 6, chaosRgbLevel: 3 },
+  "Hacker Terminal": { bgMode: 'dark', fontMode: 'manual', manualFont: 'font-courier', wordGrouping: 6, textAlign: 'left', manualTextColor: '#39FF14', wordsPerLine: 6, textureOverlay: 'crt', chaosVhsLevel: 4, chaosInvertLevel: 1 },
+  "Strobe Rave": { strobeFlicker: true, neonGlow: true, bgMode: 'plasma', fxHighlight: true, wordGrouping: 2, chaosRgbLevel: 8, chaosInvertLevel: 4, chaosShakeLevel: 8, iconEngine: true },
+  "Chroma Key Overlay": { bgMode: 'chroma-green', textureOverlay: 'none', chaosRgbLevel: 0, chaosVhsLevel: 0, chaosInvertLevel: 0, chaosShakeLevel: 0, fxShadow: false, fxHighlight: false, glitchLevel: 0, neonGlow: false, fontMode: 'manual', manualFont: 'font-montserrat', textScale: 1.5, wordGrouping: 6 },
+  "Typewriter Doc": { bgMode: 'white', fontMode: 'manual', manualFont: 'font-courier', textAlign: 'left', wordGrouping: 6, wordsPerLine: 6, physicsEnabled: false, momentumEnabled: false, textScale: 0.8, neonGlow: false },
+  "Clean Corporate": { bgMode: 'white', fontMode: 'manual', manualFont: 'font-arial', neonGlow: false, blurIntensity: 2, fadeRate: 0.1, physicsEnabled: false, manualTextColor: '#1D3557' },
+  "Neon Noir": { bgMode: 'dark', fontMode: 'manual', manualFont: 'font-bodoni', fxOutline: true, fxShadow: false, neonGlow: true, blurIntensity: 8, fadeRate: 0.05, glitchLevel: 0 },
+  "Anxiety Attack": { chaosShakeLevel: 8, chaosVhsLevel: 5, glitchLevel: 8, animationSpeed: 2.0, fadeRate: 0.3, textScale: 0.6, fontMode: 'dynamic', physicsEnabled: true },
+  "Cyberpunk City": { bgMode: 'plasma', fontMode: 'manual', manualFont: 'font-anton', fxShadow: true, glitchLevel: 5, neonGlow: true, chaosRgbLevel: 4, textScale: 1.2 },
+  "Zen Garden": { fontMode: 'manual', manualFont: 'font-montserrat', animationSpeed: 0.4, blurIntensity: 1, fadeRate: 0.08, momentumEnabled: true, physicsEnabled: false, neonGlow: false, glitchLevel: 0 },
+  "Blockbuster": { aspectRatio: 'cinema', cameraLens: '85mm', textScale: 2.5, fontMode: 'manual', manualFont: 'font-impact', wordSpacing: 1.5, blurIntensity: 6, physicsEnabled: false },
+  "Pop-Art Poster": { bgMode: 'white', textureOverlay: 'halftone', fxOutline: true, fxShadow: true, fontMode: 'manual', manualFont: 'font-anton', textScale: 1.8, wordGrouping: 1 }
 };
 
 export default function App() {
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState('');
   const [words, setWords] = useState([]);
-  const [bgShapes, setBgShapes] = useState([]); // Geometry Engine
+  const [bgShapes, setBgShapes] = useState([]); 
   const [camera, setCamera] = useState({ x: 0, y: 0, scale: 1, rotationX: 0, rotationY: 0, rotationZ: 0 });
   
   // UI & Recording States
@@ -216,23 +229,28 @@ export default function App() {
 
   // --- CHAOS OVERDRIVE ENGINE ---
   useEffect(() => {
-    if (settings.overdriveLevel === 0) return;
+    if (settings.chaosRgbLevel === 0 && settings.chaosVhsLevel === 0 && settings.chaosInvertLevel === 0 && settings.chaosShakeLevel === 0) return;
     const interval = setInterval(() => {
-      // Probability based on slider (0 to 1)
-      if (Math.random() < settings.overdriveLevel / 10) {
-         setChaos({
-           rgb: Math.random() > 0.4,
-           vhs: Math.random() > 0.6,
-           invert: Math.random() > 0.85, // Inversions should be rare/impactful
-           shakeX: (Math.random() - 0.5) * 60 * settings.overdriveLevel,
-           shakeY: (Math.random() - 0.5) * 60 * settings.overdriveLevel
-         });
-         // Auto-reset chaos state extremely fast for "poppy" momentary look
+      let active = false;
+      let newChaos = { rgb: false, vhs: false, invert: false, shakeX: 0, shakeY: 0 };
+
+      if (settings.chaosRgbLevel > 0 && Math.random() < settings.chaosRgbLevel / 10) { newChaos.rgb = true; active = true; }
+      if (settings.chaosVhsLevel > 0 && Math.random() < settings.chaosVhsLevel / 10) { newChaos.vhs = true; active = true; }
+      if (settings.chaosInvertLevel > 0 && Math.random() < (settings.chaosInvertLevel * 0.7) / 10) { newChaos.invert = true; active = true; }
+      
+      if (settings.chaosShakeLevel > 0 && Math.random() < settings.chaosShakeLevel / 10) {
+        newChaos.shakeX = (Math.random() - 0.5) * 60 * settings.chaosShakeLevel;
+        newChaos.shakeY = (Math.random() - 0.5) * 60 * settings.chaosShakeLevel;
+        active = true;
+      }
+
+      if (active) {
+         setChaos(newChaos);
          setTimeout(() => setChaos({ rgb: false, vhs: false, invert: false, shakeX: 0, shakeY: 0 }), 80 + Math.random() * 150);
       }
-    }, 150); // Tick speed
+    }, 150);
     return () => clearInterval(interval);
-  }, [settings.overdriveLevel]);
+  }, [settings.chaosRgbLevel, settings.chaosVhsLevel, settings.chaosInvertLevel, settings.chaosShakeLevel]);
 
   // --- IMMERSIVE UX TIMER ---
   useEffect(() => {
@@ -322,16 +340,16 @@ export default function App() {
 
   const handleLoadPreset = (presetName) => {
     setActivePreset(presetName);
-    const library = { ...PRESET_LIBRARY, ...customPresets };
+    const library = { ...PRESET_LIBRARY, ...(customPresets || {}) };
     if (library[presetName]) setSettings(prev => ({ ...DEFAULT_BASE_SETTINGS, ...library[presetName], languages: prev.languages }));
   };
 
   const handleSavePreset = () => {
     const name = prompt("Enter a name for your custom preset:");
     if (name) {
-      const newCustoms = { ...customPresets, [name]: { ...settings } };
+      const newCustoms = { ...(customPresets || {}), [name]: { ...settings } };
       setCustomPresets(newCustoms);
-      localStorage.setItem('kinetic_presets', JSON.stringify(newCustoms));
+      try { localStorage.setItem('kinetic_presets', JSON.stringify(newCustoms)); } catch(e) {}
       setActivePreset(name);
     }
   };
@@ -343,6 +361,10 @@ export default function App() {
       return;
     }
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+         showErrorToast("Screen recording not supported in this browser environment.", 6000);
+         return;
+      }
       const displayStream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: "browser" }, audio: false });
       const options = { mimeType: 'video/webm; codecs=vp9' };
       const recorder = new MediaRecorder(displayStream, options);
@@ -366,7 +388,7 @@ export default function App() {
       setShowUI(false); 
     } catch (err) {
       console.error("Screen capture failed:", err);
-      if (err.name === 'NotAllowedError' || err.message.includes('permissions policy')) {
+      if (err.name === 'NotAllowedError' || err.message?.includes('permissions policy')) {
         showErrorToast("Embedded view restricts built-in recording. Please use an external screen recorder (like OBS/QuickTime) along with the Chroma Key background mode.", 8000);
       } else {
         showErrorToast("Screen recording permission denied or not supported by browser.", 6000);
@@ -382,10 +404,11 @@ export default function App() {
     let i = 0; let chunkId = 0;
 
     const getChunkSize = (index) => {
-      if (settingsRef.current.wordGrouping === 6) return 999999;
-      if (settingsRef.current.wordGrouping === 1) return 1;
+      const grouping = settingsRef.current.wordGrouping || 1;
+      if (grouping === 6) return 999999;
+      if (grouping === 1) return 1;
       const hash = Math.sin(index + 1234) * 10000;
-      return Math.floor((hash - Math.floor(hash)) * settingsRef.current.wordGrouping) + 1;
+      return Math.floor((hash - Math.floor(hash)) * grouping) + 1;
     };
 
     while (i < rawWords.length) {
@@ -403,7 +426,6 @@ export default function App() {
         wordConfigs.current[index] = newWord;
         needsRender = true;
 
-        // Abstract Geometry Engine Spawner
         if (settingsRef.current.iconEngine && Math.random() > 0.4) {
           const type = SHAPE_TYPES[Math.floor(Math.random() * SHAPE_TYPES.length)];
           const bgShape = {
@@ -416,7 +438,7 @@ export default function App() {
             color: settingsRef.current.bgMode === 'vaporwave' ? COLORS_VAPOR[Math.floor(Math.random()*COLORS_VAPOR.length)] : COLORS_STD[Math.floor(Math.random()*COLORS_STD.length)],
             opacity: Math.random() * 0.4 + 0.1
           };
-          setBgShapes(prev => [...prev.slice(-12), bgShape]); // Keep last 12 shapes
+          setBgShapes(prev => [...prev.slice(-12), bgShape]); 
         }
 
         if (settingsRef.current.physicsEnabled) {
@@ -455,19 +477,31 @@ export default function App() {
     const isHindi = /[\u0900-\u097F]/.test(text);
     const isGujarati = /[\u0A80-\u0AFF]/.test(text);
     
-    const baseFont = settingsRef.current.fontMode === 'manual' 
-      ? settingsRef.current.manualFont 
-      : FONTS_DYNAMIC[Math.floor(Math.random() * FONTS_DYNAMIC.length)];
+    let baseFont = 'font-anton';
+    let chosenSysFont = 'Arial';
+    if (settingsRef.current.fontMode === 'manual') {
+      baseFont = settingsRef.current.manualFont;
+    } else if (settingsRef.current.fontMode === 'system') {
+      baseFont = 'custom-system-font';
+      // Defensive string check to prevent .split() crash
+      const rawSysFontString = settingsRef.current.customSystemFont || 'Arial';
+      const sysFonts = rawSysFontString.split(',').map(s => s.trim()).filter(Boolean);
+      chosenSysFont = sysFonts.length > 0 ? sysFonts[Math.floor(Math.random() * sysFonts.length)] : 'Arial';
+    } else {
+      baseFont = FONTS_DYNAMIC[Math.floor(Math.random() * FONTS_DYNAMIC.length)];
+    }
     const font = isHindi ? 'font-hi' : isGujarati ? 'font-gu' : baseFont;
     
-    const size = SIZES[Math.floor(Math.random() * SIZES.length)] * settingsRef.current.textScale;
-    const palette = settingsRef.current.bgMode === 'vaporwave' ? COLORS_VAPOR : COLORS_STD;
+    const size = SIZES[Math.floor(Math.random() * SIZES.length)] * (settingsRef.current.textScale || 1.0);
+    const palette = settingsRef.current.bgMode === 'vaporwave' ? COLORS_VAPOR : settingsRef.current.bgMode === 'white' ? COLORS_LIGHT_BG : COLORS_STD;
     let rawColor = palette[Math.floor(Math.random() * palette.length)];
     
     const isOutline = settingsRef.current.fxOutline;
     const color = isOutline ? 'transparent' : rawColor;
     
-    const outlineColors = ['#FFFFFF', '#FF00FF', '#00FFFF', '#39FF14', '#E63946'];
+    const outlineColors = settingsRef.current.bgMode === 'white' 
+        ? ['#000000', '#E63946', '#1D3557', '#000000', '#FF00FF']
+        : ['#FFFFFF', '#FF00FF', '#00FFFF', '#39FF14', '#E63946'];
     const outlineColor = isOutline ? outlineColors[Math.floor(Math.random() * outlineColors.length)] : '#FFFFFF';
     const outlineWidth = (0.02 + Math.random() * 0.04).toFixed(3) + 'em';
     
@@ -502,7 +536,7 @@ export default function App() {
       
       const estPrevWidth = prevMaxChars * prevConfig.size * 0.55;
       const estWidth = maxChars * size * 0.55;
-      const gap = Math.max(20, size * 0.25) * settingsRef.current.wordSpacing;
+      const gap = Math.max(20, size * 0.25) * (settingsRef.current.wordSpacing || 1.0);
       
       switch(dir) {
         case 'right': x = prevConfig.x + (estPrevWidth / 2) + (estWidth / 2) + gap; y = prevConfig.y + (Math.random() * 60 - 30); break;
@@ -513,7 +547,7 @@ export default function App() {
       }
     } 
 
-    return { id: index, text, font, color, isOutline, outlineColor, outlineWidth, rotation, x, y, size, glitchSeed, flickerDelay, floatDuration, floatDelay, shadowStr, hlColor, hlRot, hlSx, hlSy, hlOp };
+    return { id: index, text, font, customFontName: chosenSysFont, color, isOutline, outlineColor, outlineWidth, rotation, x, y, size, glitchSeed, flickerDelay, floatDuration, floatDelay, shadowStr, hlColor, hlRot, hlSx, hlSy, hlOp };
   };
 
   const updateCamera = (latestWord) => {
@@ -525,7 +559,7 @@ export default function App() {
     const maxChars = Math.max(...lines.map(l => l.length));
 
     const estWidth = maxChars * latestWord.size * 0.6;
-    const estHeight = lines.length * latestWord.size * settingsRef.current.lineSpacing;
+    const estHeight = lines.length * latestWord.size * (settingsRef.current.lineSpacing || 0.85);
     const padding = Math.max(200, latestWord.size * 1.5);
     
     const scaleX = window.innerWidth / (estWidth + padding);
@@ -537,8 +571,8 @@ export default function App() {
     targetScale = targetScale * lensMultiplier * userZoom;
     if (isNaN(targetScale) || !isFinite(targetScale)) targetScale = 1;
 
-    let camX = isNaN(latestWord.x) ? 0 : -(latestWord.x + settingsRef.current.spawnAnchorX);
-    let camY = isNaN(latestWord.y) ? 0 : -(latestWord.y + settingsRef.current.spawnAnchorY);
+    let camX = isNaN(latestWord.x) ? 0 : -(latestWord.x + (settingsRef.current.spawnAnchorX || 0));
+    let camY = isNaN(latestWord.y) ? 0 : -(latestWord.y + (settingsRef.current.spawnAnchorY || 0));
     let camRotX = 0; let camRotY = 0; let camRotZ = isNaN(latestWord.rotation) ? 0 : -latestWord.rotation;
 
     if (settingsRef.current.cameraMode === 'manual') {
@@ -554,19 +588,36 @@ export default function App() {
     else { document.exitFullscreen(); setIsFullscreen(false); }
   };
 
-  const getAspectRatioStyle = () => {
+  const getAspectRatioStyle = (isWhiteBg) => {
+    const borderCol = isWhiteBg ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
     const baseStyle = { position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.5s cubic-bezier(0.25, 1, 0.3, 1)' };
     switch(settings.aspectRatio) {
-      case 'tiktok': return { ...baseStyle, width: 'min(100vw, 50.6vh)', height: 'min(100vh, 177vw)', borderRadius: '20px', border: '2px solid rgba(255,255,255,0.1)' };
-      case 'youtube': return { ...baseStyle, width: 'min(100vw, 160vh)', height: 'min(100vh, 56.25vw)', border: '2px solid rgba(255,255,255,0.1)' };
-      case 'cinema': return { ...baseStyle, width: 'min(100vw, 210vh)', height: 'min(100vh, 42.8vw)', border: '2px solid rgba(255,255,255,0.1)' };
-      case 'imax': return { ...baseStyle, width: 'min(100vw, 143vh)', height: 'min(100vh, 69.9vw)', border: '2px solid rgba(255,255,255,0.1)' };
-      case 'square': return { ...baseStyle, width: 'min(90vw, 90vh)', height: 'min(90vw, 90vh)', borderRadius: '10px', border: '2px solid rgba(255,255,255,0.1)' };
+      case 'tiktok': return { ...baseStyle, width: 'min(100vw, 50.6vh)', height: 'min(100vh, 177vw)', borderRadius: '20px', border: `2px solid ${borderCol}` };
+      case 'youtube': return { ...baseStyle, width: 'min(100vw, 160vh)', height: 'min(100vh, 56.25vw)', border: `2px solid ${borderCol}` };
+      case 'cinema': return { ...baseStyle, width: 'min(100vw, 210vh)', height: 'min(100vh, 42.8vw)', border: `2px solid ${borderCol}` };
+      case 'imax': return { ...baseStyle, width: 'min(100vw, 143vh)', height: 'min(100vh, 69.9vw)', border: `2px solid ${borderCol}` };
+      case 'square': return { ...baseStyle, width: 'min(90vw, 90vh)', height: 'min(90vw, 90vh)', borderRadius: '10px', border: `2px solid ${borderCol}` };
       case 'fullscreen': default: return { ...baseStyle, width: '100%', height: '100%' };
     }
   };
 
   const resetManualCamera = () => { setSettings({...settings, manualPanX: 0, manualPanY: 0, manualRotX: 0, manualRotY: 0, manualRotZ: 0}); };
+
+  const handleCustomBgUpload = (e) => {
+    try {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      if (settings.customBgUrl) {
+         try { URL.revokeObjectURL(settings.customBgUrl); } catch(err) {} 
+      }
+      const url = URL.createObjectURL(file);
+      // Bulletproof file type check
+      const type = (file.type && file.type.startsWith('video/')) ? 'video' : 'image';
+      setSettings({...settings, bgMode: 'custom', customBgUrl: url, customBgType: type});
+    } catch (error) {
+      console.error("Error loading custom background:", error);
+    }
+  };
 
   const safeScale = isNaN(camera.scale) ? 1 : camera.scale;
   const safeRotX = isNaN(camera.rotationX) ? 0 : camera.rotationX;
@@ -577,8 +628,9 @@ export default function App() {
 
   const isChromaGreen = settings.bgMode === 'chroma-green';
   const isChromaBlue = settings.bgMode === 'chroma-blue';
+  const isWhite = settings.bgMode === 'white';
   const isChroma = isChromaGreen || isChromaBlue;
-  const wrapperBgColor = isChromaGreen ? '#00FF00' : isChromaBlue ? '#0000FF' : '#050505';
+  const wrapperBgColor = isChromaGreen ? '#00FF00' : isChromaBlue ? '#0000FF' : isWhite ? '#FFFFFF' : '#050505';
 
   const renderShape = (s) => {
     const style = { position: 'absolute', left: s.x + settings.spawnAnchorX, top: s.y + settings.spawnAnchorY, transform: `translate(-50%, -50%) rotate(${s.rotation}deg)`, opacity: s.opacity, zIndex: 5, pointerEvents: 'none' };
@@ -593,8 +645,8 @@ export default function App() {
   };
 
   return (
-    <div className={`relative w-full h-screen flex items-center justify-center overflow-hidden font-sans text-white select-none transition-colors duration-1000 ${!showUI && !showSettings ? 'cursor-none' : ''}`} style={{ backgroundColor: wrapperBgColor, '--speed': settings.animationSpeed }}>
-      <style>{globalStyles}</style>
+    <div className={`kinetic-wrapper relative w-full h-screen flex items-center justify-center overflow-hidden font-sans text-white select-none transition-colors duration-1000 ${!showUI && !showSettings ? 'cursor-none' : ''}`} style={{ backgroundColor: wrapperBgColor }}>
+      <style>{getGlobalStyles(settings.animationSpeed)}</style>
       
       {isRecording && (
         <div className="absolute top-6 left-6 z-[100] flex items-center bg-black/60 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full">
@@ -604,13 +656,24 @@ export default function App() {
       )}
 
       {/* Global Chaos Invert applied to Matte Box */}
-      <div style={getAspectRatioStyle()} className={`${chaos.invert && !isChroma ? 'chaos-invert' : ''}`}>
+      <div style={getAspectRatioStyle(isWhite)} className={`${chaos.invert && !isChroma ? 'chaos-invert' : ''}`}>
         
+        {/* Custom Background Render */}
+        {settings.bgMode === 'custom' && settings.customBgUrl && (
+          <div className="absolute inset-0 pointer-events-none z-0">
+            {settings.customBgType === 'video' ? (
+              <video src={settings.customBgUrl} autoPlay loop muted playsInline className="w-full h-full object-cover opacity-80" />
+            ) : (
+              <img src={settings.customBgUrl} className="w-full h-full object-cover opacity-80" alt="Custom BG" />
+            )}
+          </div>
+        )}
+
         {/* Dynamic Backgrounds */}
         {!isChroma && (
           <>
-            <div className="noise" />
-            <div className="vignette" />
+            {!isWhite && <div className="noise" />}
+            {!isWhite && <div className="vignette" />}
             {settings.bgMode === 'vaporwave' && <div className="vaporwave-grid" />}
             {settings.bgMode === 'plasma' && <div className="plasma-bg" />}
             
@@ -633,10 +696,10 @@ export default function App() {
             const isLatest = idx === words.length - 1;
             const age = words.length - 1 - idx;
             
-            const targetOpacity = isLatest ? 1 : Math.max(0, 1 - (age * settings.fadeRate));
-            const targetBlur = isLatest ? 0 : age * settings.blurIntensity;
+            const targetOpacity = isLatest ? 1 : Math.max(0, 1 - (age * (settings.fadeRate || 0.15)));
+            const targetBlur = isLatest ? 0 : age * (settings.blurIntensity || 4);
             
-            const isGlitching = w.glitchSeed < settings.glitchLevel;
+            const isGlitching = w.glitchSeed < (settings.glitchLevel || 0);
             const glitchStyle = isGlitching ? { animation: `glitch-anim ${1 + w.glitchSeed}s infinite` } : {};
             const momentumStyle = settings.momentumEnabled ? { animation: `float-parallax ${w.floatDuration} ease-in-out ${w.floatDelay} infinite` } : {};
             const markerClass = settings.fxHighlight && w.hlOp > 0.4 && !isChroma ? 'text-highlight-fx' : '';
@@ -649,7 +712,7 @@ export default function App() {
               if (isInfinity) {
                 const hex = settings.manualShadowColor || '#000000';
                 const r = parseInt(hex.slice(1, 3), 16) || 0; const g = parseInt(hex.slice(3, 5), 16) || 0; const b = parseInt(hex.slice(5, 7), 16) || 0;
-                finalShadow = `8px 8px 0px rgba(${r},${g},${b},${settings.manualShadowOpacity})`;
+                finalShadow = `8px 8px 0px rgba(${r},${g},${b},${settings.manualShadowOpacity || 0.8})`;
               } else { finalShadow = w.shadowStr; }
             }
             
@@ -659,9 +722,10 @@ export default function App() {
             return (
               <div 
                 key={w.id} 
-                className={`kinetic-word ${w.font} ${w.isOutline ? 'text-outline-fx' : ''} ${settings.strobeFlicker && !isChroma ? 'flicker-fx' : ''}`}
+                className={`kinetic-word ${w.font !== 'custom-system-font' ? w.font : ''} ${w.isOutline ? 'text-outline-fx' : ''} ${settings.strobeFlicker && !isChroma ? 'flicker-fx' : ''}`}
                 style={{ 
-                  fontSize: `${w.size}px`, color: finalColor, left: `${w.x + settings.spawnAnchorX}px`, top: `${w.y + settings.spawnAnchorY}px`, 
+                  fontFamily: w.font === 'custom-system-font' ? w.customFontName : undefined,
+                  fontSize: `${w.size}px`, color: finalColor, left: `${w.x + (settings.spawnAnchorX || 0)}px`, top: `${w.y + (settings.spawnAnchorY || 0)}px`, 
                   transform: `translate(-50%, -50%) rotate(${w.rotation}deg)`, 
                   zIndex: isLatest ? 50 : 10,
                   animationDelay: `${w.flickerDelay}s`,
@@ -715,14 +779,14 @@ export default function App() {
               <select 
                 value={activePreset} 
                 onChange={(e) => handleLoadPreset(e.target.value)}
-                className="flex-1 bg-black/50 border border-white/20 rounded-lg text-[10px] font-bold uppercase p-2 focus:outline-none text-white truncate"
+                className="flex-1 bg-gray-900 border border-white/20 rounded-lg text-[10px] font-bold uppercase p-2 focus:outline-none text-white truncate"
               >
-                <optgroup label="Built-in Mograph">
-                  {Object.keys(PRESET_LIBRARY).map(p => <option key={p} value={p}>{p}</option>)}
+                <optgroup label="Built-in Mograph" className="bg-gray-900 text-white">
+                  {Object.keys(PRESET_LIBRARY).map(p => <option key={p} value={p} className="bg-gray-900 text-white">{p}</option>)}
                 </optgroup>
                 {Object.keys(customPresets).length > 0 && (
-                  <optgroup label="My Custom Presets">
-                    {Object.keys(customPresets).map(p => <option key={p} value={p}>{p}</option>)}
+                  <optgroup label="My Custom Presets" className="bg-gray-900 text-white">
+                    {Object.keys(customPresets).map(p => <option key={p} value={p} className="bg-gray-900 text-white">{p}</option>)}
                   </optgroup>
                 )}
               </select>
@@ -739,12 +803,23 @@ export default function App() {
             <div className="flex flex-col gap-1">
                <div className="flex gap-2 mb-1">
                   <button onClick={() => setSettings({...settings, fontMode: 'dynamic'})} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.fontMode === 'dynamic' ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>Dynamic</button>
-                  <button onClick={() => setSettings({...settings, fontMode: 'manual'})} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.fontMode === 'manual' ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>Manual Font</button>
+                  <button onClick={() => setSettings({...settings, fontMode: 'manual'})} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.fontMode === 'manual' ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>Manual</button>
+                  <button onClick={() => setSettings({...settings, fontMode: 'system'})} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.fontMode === 'system' ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>System</button>
                </div>
                {settings.fontMode === 'manual' && (
-                  <select value={settings.manualFont} onChange={(e) => setSettings({...settings, manualFont: e.target.value})} className="w-full bg-black/50 border border-white/20 rounded text-[10px] p-1.5 text-white">
-                    {FONTS_ALL.map(f => <option key={f} value={f}>{f.replace('font-', '').toUpperCase()}</option>)}
+                  <select value={settings.manualFont} onChange={(e) => setSettings({...settings, manualFont: e.target.value})} className="w-full bg-gray-900 border border-white/20 rounded text-[10px] p-1.5 text-white">
+                    {FONTS_ALL.map(f => <option key={f} value={f} className="bg-gray-900 text-white">{f.replace('font-', '').toUpperCase()}</option>)}
                   </select>
+               )}
+               {settings.fontMode === 'system' && (
+                  <input 
+                    type="text" 
+                    value={settings.customSystemFont || ''} 
+                    onChange={(e) => setSettings({...settings, customSystemFont: e.target.value})} 
+                    placeholder="e.g. Arial, Impact, Comic Sans MS" 
+                    title="Enter a comma-separated list of fonts"
+                    className="w-full bg-black/50 border border-white/20 rounded text-[10px] p-1.5 text-white focus:outline-none focus:border-white/50 placeholder-white/40" 
+                  />
                )}
             </div>
 
@@ -838,11 +913,21 @@ export default function App() {
 
           <div className="flex flex-col gap-2 border-t border-white/10 pt-4">
             <label className="text-xs opacity-60 font-bold uppercase flex items-center"><MonitorPlay className="w-4 h-4 mr-2"/> Environment & Export</label>
-            <div className="grid grid-cols-3 gap-1 mb-1">
-              {['dark', 'vaporwave', 'plasma'].map(bg => (
-                <button key={bg} onClick={() => setSettings({...settings, bgMode: bg})} className={`py-2 text-[9px] font-bold uppercase rounded transition-all ${settings.bgMode === bg ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>{bg}</button>
+            <div className="grid grid-cols-5 gap-1 mb-1">
+              {['dark', 'white', 'vaporwave', 'plasma', 'custom'].map(bg => (
+                <button key={bg} onClick={() => setSettings({...settings, bgMode: bg})} className={`py-2 text-[8px] font-bold uppercase rounded transition-all ${settings.bgMode === bg ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>{bg}</button>
               ))}
             </div>
+            
+            {settings.bgMode === 'custom' && (
+               <label className="flex items-center justify-center w-full py-2 mt-1 mb-1 bg-white/10 hover:bg-white/20 border border-white/20 rounded cursor-pointer transition-colors">
+                 {/* Replaced strict lucide-react 'Upload' dependency with hardcoded bulletproof SVG */}
+                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 mr-2 text-white"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                 <span className="text-[9px] font-bold uppercase text-white">{settings.customBgUrl ? 'Change Background' : 'Upload Image / Video'}</span>
+                 <input type="file" accept="image/*,video/*" className="hidden" onChange={handleCustomBgUpload} />
+               </label>
+            )}
+
             <div className="grid grid-cols-2 gap-1">
               <button onClick={() => setSettings({...settings, bgMode: 'chroma-green'})} className={`py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.bgMode === 'chroma-green' ? 'bg-[#00FF00] text-black shadow-[0_0_10px_#00FF00]' : 'bg-white/10 hover:bg-white/20'}`}>Chroma Green</button>
               <button onClick={() => setSettings({...settings, bgMode: 'chroma-blue'})} className={`py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.bgMode === 'chroma-blue' ? 'bg-[#0000FF] text-white shadow-[0_0_10px_#0000FF]' : 'bg-white/10 hover:bg-white/20'}`}>Chroma Blue</button>
@@ -862,11 +947,11 @@ export default function App() {
             <label className="text-xs opacity-60 font-bold uppercase flex items-center"><Zap className="w-4 h-4 mr-2"/> Kinetic FX</label>
             
             <div className="grid grid-cols-2 gap-2">
-               <button onClick={() => setSettings({...settings, physicsEnabled: !settings.physicsEnabled})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.physicsEnabled ? 'bg-white text-black border-white' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>PHYSICS</button>
-               <button onClick={() => setSettings({...settings, momentumEnabled: !settings.momentumEnabled})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.momentumEnabled ? 'bg-white text-black border-white' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>MOMENTUM</button>
-               <button onClick={() => setSettings({...settings, neonGlow: !settings.neonGlow})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.neonGlow ? 'bg-[#FF00FF] text-white border-[#FF00FF] shadow-[0_0_15px_#FF00FF]' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>NEON GLOW</button>
-               <button onClick={() => setSettings({...settings, strobeFlicker: !settings.strobeFlicker})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.strobeFlicker ? 'bg-[#00FFFF] text-black border-[#00FFFF] shadow-[0_0_15px_#00FFFF]' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>STROBE</button>
-               <button onClick={() => setSettings({...settings, iconEngine: !settings.iconEngine})} className={`col-span-2 py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.iconEngine ? 'bg-yellow-400 text-black border-yellow-400 shadow-[0_0_15px_#FACC15]' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>GEOMETRY ENGINE</button>
+               <button onClick={() => setSettings({...settings, physicsEnabled: !settings.physicsEnabled})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.physicsEnabled ? 'bg-white text-black border-white' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>PHYSICS</button>
+               <button onClick={() => setSettings({...settings, momentumEnabled: !settings.momentumEnabled})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.momentumEnabled ? 'bg-white text-black border-white' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>MOMENTUM</button>
+               <button onClick={() => setSettings({...settings, neonGlow: !settings.neonGlow})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.neonGlow ? 'bg-[#FF00FF] text-white border-[#FF00FF] shadow-[0_0_15px_#FF00FF]' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>NEON GLOW</button>
+               <button onClick={() => setSettings({...settings, strobeFlicker: !settings.strobeFlicker})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.strobeFlicker ? 'bg-[#00FFFF] text-black border-[#00FFFF] shadow-[0_0_15px_#00FFFF]' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>STROBE</button>
+               <button onClick={() => setSettings({...settings, iconEngine: !settings.iconEngine})} className={`col-span-2 py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.iconEngine ? 'bg-yellow-400 text-black border-yellow-400 shadow-[0_0_15px_#FACC15]' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>GEOMETRY ENGINE</button>
             </div>
 
             <div className="flex flex-col gap-1 mt-2">
@@ -874,22 +959,43 @@ export default function App() {
               <input type="range" min="0" max="10" value={settings.glitchLevel} onChange={(e) => setSettings({...settings, glitchLevel: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'glitchLevel', 2)} className="w-full accent-red-400" />
             </div>
 
-            <div className="flex flex-col gap-1 mt-2 p-3 bg-red-900/20 border border-red-500/30 rounded-xl">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] opacity-80 uppercase font-bold text-red-400">Chaos Overdrive</span>
-                <span className="text-[10px] opacity-80 font-bold text-red-400">{settings.overdriveLevel === 0 ? 'OFF' : settings.overdriveLevel}</span>
+            {/* 🔥 Granular Chaos Engine */}
+            <div className="flex flex-col gap-2 mt-2 p-3 bg-red-900/20 border border-red-500/30 rounded-xl">
+              <div className="flex justify-between items-center border-b border-red-500/30 pb-1.5 mb-1">
+                <span className="text-[10px] opacity-80 uppercase font-bold text-red-400">Chaos Engine</span>
+                <span className="text-[8px] opacity-60 font-bold text-red-300">CTRL+CLICK TO RESET</span>
               </div>
-              <input type="range" min="0" max="10" step="1" value={settings.overdriveLevel} onChange={(e) => setSettings({...settings, overdriveLevel: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'overdriveLevel', 0)} className="w-full accent-red-500" />
-              <span className="text-[8px] opacity-50 text-red-200 mt-1 uppercase text-center">Randomized Camera & Color FX Spikes</span>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between"><span className="text-[9px] opacity-70 uppercase font-bold text-red-300">RGB Split</span><span className="text-[9px] opacity-70 font-bold text-red-300">{settings.chaosRgbLevel}</span></div>
+                  <input type="range" min="0" max="10" step="1" value={settings.chaosRgbLevel} onChange={(e) => setSettings({...settings, chaosRgbLevel: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'chaosRgbLevel', 0)} className="w-full accent-red-500" />
+                </div>
+                
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between"><span className="text-[9px] opacity-70 uppercase font-bold text-red-300">VHS Track</span><span className="text-[9px] opacity-70 font-bold text-red-300">{settings.chaosVhsLevel}</span></div>
+                  <input type="range" min="0" max="10" step="1" value={settings.chaosVhsLevel} onChange={(e) => setSettings({...settings, chaosVhsLevel: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'chaosVhsLevel', 0)} className="w-full accent-red-500" />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between"><span className="text-[9px] opacity-70 uppercase font-bold text-red-300">Invert</span><span className="text-[9px] opacity-70 font-bold text-red-300">{settings.chaosInvertLevel}</span></div>
+                  <input type="range" min="0" max="10" step="1" value={settings.chaosInvertLevel} onChange={(e) => setSettings({...settings, chaosInvertLevel: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'chaosInvertLevel', 0)} className="w-full accent-red-500" />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between"><span className="text-[9px] opacity-70 uppercase font-bold text-red-300">Shake</span><span className="text-[9px] opacity-70 font-bold text-red-300">{settings.chaosShakeLevel}</span></div>
+                  <input type="range" min="0" max="10" step="1" value={settings.chaosShakeLevel} onChange={(e) => setSettings({...settings, chaosShakeLevel: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'chaosShakeLevel', 0)} className="w-full accent-red-500" />
+                </div>
+              </div>
             </div>
           </div>
 
           <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
             <label className="text-xs opacity-60 font-bold uppercase flex items-center"><Type className="w-4 h-4 mr-2"/> Pop-Art Text FX</label>
             <div className="grid grid-cols-3 gap-2">
-               <button onClick={() => setSettings({...settings, fxOutline: !settings.fxOutline})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.fxOutline ? 'bg-white text-black border-white' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>OUTLINE</button>
-               <button onClick={() => setSettings({...settings, fxShadow: !settings.fxShadow})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.fxShadow ? 'bg-white text-black border-white' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>SHADOW</button>
-               <button onClick={() => setSettings({...settings, fxHighlight: !settings.fxHighlight})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.fxHighlight ? 'bg-white text-black border-white' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>MARKER</button>
+               <button onClick={() => setSettings({...settings, fxOutline: !settings.fxOutline})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.fxOutline ? 'bg-white text-black border-white' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>OUTLINE</button>
+               <button onClick={() => setSettings({...settings, fxShadow: !settings.fxShadow})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.fxShadow ? 'bg-white text-black border-white' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>SHADOW</button>
+               <button onClick={() => setSettings({...settings, fxHighlight: !settings.fxHighlight})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.fxHighlight ? 'bg-white text-black border-white' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>MARKER</button>
             </div>
           </div>
 
@@ -958,27 +1064,27 @@ export default function App() {
 
       {/* UI Bottom Controls */}
       <div className={`absolute bottom-8 left-0 right-0 flex justify-center items-center space-x-6 z-50 transition-all duration-500 ${showUI || showSettings ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
-        <button onClick={handleRecordToggle} title="Record Transparent Video" className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${isRecording ? 'bg-red-600 border-red-500 text-white animate-pulse' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white hover:text-red-400'}`}>
+        <button onClick={handleRecordToggle} title="Record Transparent Video" className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${isRecording ? 'bg-red-600 border-red-500 text-white animate-pulse' : isWhite ? 'bg-black/5 hover:bg-black/10 border-black/20 text-black hover:text-red-600' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white hover:text-red-400'}`}>
           {isRecording ? <Square className="w-4 h-4" fill="currentColor" /> : <Video className="w-5 h-5" />}
         </button>
 
-        <button onClick={toggleListening} className={`flex items-center justify-center w-16 h-16 rounded-full shadow-2xl transition-all duration-300 ${isListening ? 'bg-red-600 hover:bg-red-500 scale-110 animate-pulse text-white' : 'bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white'}`}>
+        <button onClick={toggleListening} className={`flex items-center justify-center w-16 h-16 rounded-full shadow-2xl transition-all duration-300 ${isListening ? 'bg-red-600 hover:bg-red-500 scale-110 animate-pulse text-white' : isWhite ? 'bg-black/5 hover:bg-black/10 backdrop-blur-md border border-black/20 text-black' : 'bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white'}`}>
           {isListening ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
         </button>
 
-        <button onClick={toggleFullscreen} className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 transition-all text-white">
+        <button onClick={toggleFullscreen} className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${isWhite ? 'bg-black/5 hover:bg-black/10 border-black/20 text-black' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'}`}>
           {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
         </button>
 
-        <button onClick={() => setShowSettings(!showSettings)} className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${showSettings ? 'bg-white text-black border-white' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'}`}>
+        <button onClick={() => setShowSettings(!showSettings)} className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${showSettings ? 'bg-white text-black border-white' : isWhite ? 'bg-black/5 hover:bg-black/10 border-black/20 text-black' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'}`}>
           <Sliders className="w-5 h-5" />
         </button>
       </div>
 
       {!isListening && words.length === 0 && !error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none z-40">
-          <h1 className="text-6xl md:text-8xl font-black font-montserrat tracking-tighter mb-4 opacity-80">KINETIC<br/>VOICE</h1>
-          <p className="text-xl font-bold font-inter tracking-widest uppercase opacity-50">Click Mic to Start Mograph</p>
+          <h1 className={`text-6xl md:text-8xl font-black font-montserrat tracking-tighter mb-4 opacity-80 ${isWhite ? 'text-black' : ''}`}>KINETIC<br/>VOICE</h1>
+          <p className={`text-xl font-bold font-inter tracking-widest uppercase opacity-50 ${isWhite ? 'text-black' : ''}`}>Click Mic to Start Mograph</p>
         </div>
       )}
     </div>
