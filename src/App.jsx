@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Maximize, Minimize, AlertCircle, Sliders, Activity, Zap, Type, Globe, Camera, MonitorPlay, X, Save, Bookmark, Video, Square, Layers } from 'lucide-react';
+import { Mic, MicOff, Maximize, Minimize, AlertCircle, Sliders, Activity, Zap, Type, Globe, Camera, Monitor, X, Save, Bookmark, Video, StopCircle, Layers } from 'lucide-react';
 
 // --- CSS STYLES & FONTS ---
 const getGlobalStyles = (speed) => `
@@ -163,21 +163,21 @@ const DEFAULT_BASE_SETTINGS = {
 const PRESET_LIBRARY = {
   "Default Mograph": { ...DEFAULT_BASE_SETTINGS },
   "Subtle Natural Fade": { ...DEFAULT_BASE_SETTINGS, physicsEnabled: false, momentumEnabled: false, blurIntensity: 2, fadeRate: 0.05, animationSpeed: 0.5, fontMode: 'manual', manualFont: 'font-arial', neonGlow: false, fxShadow: false, glitchLevel: 0, cameraMode: 'manual', manualZoom: 1.1 },
-  "TikTok Overdrive": { aspectRatio: 'tiktok', cameraLens: '18mm', wordGrouping: 6, wordsPerLine: 2, textScale: 1.5, physicsEnabled: false, fontMode: 'manual', manualFont: 'font-bebas', fxShadow: true, chaosShakeLevel: 6, chaosRgbLevel: 4, iconEngine: true },
-  "Comic Book": { fontMode: 'manual', manualFont: 'font-impact', textureOverlay: 'halftone', fxOutline: true, fxShadow: true, wordGrouping: 1, textScale: 1.5, bgMode: 'vaporwave', iconEngine: true },
-  "Cinematic Trailer": { aspectRatio: 'cinema', cameraLens: '55mm', fontMode: 'manual', manualFont: 'font-bodoni', wordGrouping: 2, blurIntensity: 6, fadeRate: 0.1, textureOverlay: 'grunge' },
-  "Vaporwave CRT": { bgMode: 'vaporwave', fontMode: 'manual', manualFont: 'font-vt323', neonGlow: true, glitchLevel: 4, momentumEnabled: true, fxHighlight: true, textureOverlay: 'crt', chaosVhsLevel: 6, chaosRgbLevel: 3 },
-  "Hacker Terminal": { bgMode: 'dark', fontMode: 'manual', manualFont: 'font-courier', wordGrouping: 6, textAlign: 'left', manualTextColor: '#39FF14', wordsPerLine: 6, textureOverlay: 'crt', chaosVhsLevel: 4, chaosInvertLevel: 1 },
-  "Strobe Rave": { strobeFlicker: true, neonGlow: true, bgMode: 'plasma', fxHighlight: true, wordGrouping: 2, chaosRgbLevel: 8, chaosInvertLevel: 4, chaosShakeLevel: 8, iconEngine: true },
-  "Chroma Key Overlay": { bgMode: 'chroma-green', textureOverlay: 'none', chaosRgbLevel: 0, chaosVhsLevel: 0, chaosInvertLevel: 0, chaosShakeLevel: 0, fxShadow: false, fxHighlight: false, glitchLevel: 0, neonGlow: false, fontMode: 'manual', manualFont: 'font-montserrat', textScale: 1.5, wordGrouping: 6 },
-  "Typewriter Doc": { bgMode: 'white', fontMode: 'manual', manualFont: 'font-courier', textAlign: 'left', wordGrouping: 6, wordsPerLine: 6, physicsEnabled: false, momentumEnabled: false, textScale: 0.8, neonGlow: false },
-  "Clean Corporate": { bgMode: 'white', fontMode: 'manual', manualFont: 'font-arial', neonGlow: false, blurIntensity: 2, fadeRate: 0.1, physicsEnabled: false, manualTextColor: '#1D3557' },
-  "Neon Noir": { bgMode: 'dark', fontMode: 'manual', manualFont: 'font-bodoni', fxOutline: true, fxShadow: false, neonGlow: true, blurIntensity: 8, fadeRate: 0.05, glitchLevel: 0 },
-  "Anxiety Attack": { chaosShakeLevel: 8, chaosVhsLevel: 5, glitchLevel: 8, animationSpeed: 2.0, fadeRate: 0.3, textScale: 0.6, fontMode: 'dynamic', physicsEnabled: true },
-  "Cyberpunk City": { bgMode: 'plasma', fontMode: 'manual', manualFont: 'font-anton', fxShadow: true, glitchLevel: 5, neonGlow: true, chaosRgbLevel: 4, textScale: 1.2 },
-  "Zen Garden": { fontMode: 'manual', manualFont: 'font-montserrat', animationSpeed: 0.4, blurIntensity: 1, fadeRate: 0.08, momentumEnabled: true, physicsEnabled: false, neonGlow: false, glitchLevel: 0 },
-  "Blockbuster": { aspectRatio: 'cinema', cameraLens: '85mm', textScale: 2.5, fontMode: 'manual', manualFont: 'font-impact', wordSpacing: 1.5, blurIntensity: 6, physicsEnabled: false },
-  "Pop-Art Poster": { bgMode: 'white', textureOverlay: 'halftone', fxOutline: true, fxShadow: true, fontMode: 'manual', manualFont: 'font-anton', textScale: 1.8, wordGrouping: 1 }
+  "TikTok Overdrive": { ...DEFAULT_BASE_SETTINGS, aspectRatio: 'tiktok', cameraLens: '18mm', wordGrouping: 6, wordsPerLine: 2, textScale: 1.5, physicsEnabled: false, fontMode: 'manual', manualFont: 'font-bebas', fxShadow: true, chaosShakeLevel: 6, chaosRgbLevel: 4, iconEngine: true },
+  "Comic Book": { ...DEFAULT_BASE_SETTINGS, fontMode: 'manual', manualFont: 'font-impact', textureOverlay: 'halftone', fxOutline: true, fxShadow: true, wordGrouping: 1, textScale: 1.5, bgMode: 'vaporwave', iconEngine: true },
+  "Cinematic Trailer": { ...DEFAULT_BASE_SETTINGS, aspectRatio: 'cinema', cameraLens: '55mm', fontMode: 'manual', manualFont: 'font-bodoni', wordGrouping: 2, blurIntensity: 6, fadeRate: 0.1, textureOverlay: 'grunge' },
+  "Vaporwave CRT": { ...DEFAULT_BASE_SETTINGS, bgMode: 'vaporwave', fontMode: 'manual', manualFont: 'font-vt323', neonGlow: true, glitchLevel: 4, momentumEnabled: true, fxHighlight: true, textureOverlay: 'crt', chaosVhsLevel: 6, chaosRgbLevel: 3 },
+  "Hacker Terminal": { ...DEFAULT_BASE_SETTINGS, bgMode: 'dark', fontMode: 'manual', manualFont: 'font-courier', wordGrouping: 6, textAlign: 'left', manualTextColor: '#39FF14', wordsPerLine: 6, textureOverlay: 'crt', chaosVhsLevel: 4, chaosInvertLevel: 1 },
+  "Strobe Rave": { ...DEFAULT_BASE_SETTINGS, strobeFlicker: true, neonGlow: true, bgMode: 'plasma', fxHighlight: true, wordGrouping: 2, chaosRgbLevel: 8, chaosInvertLevel: 4, chaosShakeLevel: 8, iconEngine: true },
+  "Chroma Key Overlay": { ...DEFAULT_BASE_SETTINGS, bgMode: 'chroma-green', textureOverlay: 'none', chaosRgbLevel: 0, chaosVhsLevel: 0, chaosInvertLevel: 0, chaosShakeLevel: 0, fxShadow: false, fxHighlight: false, glitchLevel: 0, neonGlow: false, fontMode: 'manual', manualFont: 'font-montserrat', textScale: 1.5, wordGrouping: 6 },
+  "Typewriter Doc": { ...DEFAULT_BASE_SETTINGS, bgMode: 'white', fontMode: 'manual', manualFont: 'font-courier', textAlign: 'left', wordGrouping: 6, wordsPerLine: 6, physicsEnabled: false, momentumEnabled: false, textScale: 0.8, neonGlow: false },
+  "Clean Corporate": { ...DEFAULT_BASE_SETTINGS, bgMode: 'white', fontMode: 'manual', manualFont: 'font-arial', neonGlow: false, blurIntensity: 2, fadeRate: 0.1, physicsEnabled: false, manualTextColor: '#1D3557' },
+  "Neon Noir": { ...DEFAULT_BASE_SETTINGS, bgMode: 'dark', fontMode: 'manual', manualFont: 'font-bodoni', fxOutline: true, fxShadow: false, neonGlow: true, blurIntensity: 8, fadeRate: 0.05, glitchLevel: 0 },
+  "Anxiety Attack": { ...DEFAULT_BASE_SETTINGS, chaosShakeLevel: 8, chaosVhsLevel: 5, glitchLevel: 8, animationSpeed: 2.0, fadeRate: 0.3, textScale: 0.6, fontMode: 'dynamic', physicsEnabled: true },
+  "Cyberpunk City": { ...DEFAULT_BASE_SETTINGS, bgMode: 'plasma', fontMode: 'manual', manualFont: 'font-anton', fxShadow: true, glitchLevel: 5, neonGlow: true, chaosRgbLevel: 4, textScale: 1.2 },
+  "Zen Garden": { ...DEFAULT_BASE_SETTINGS, fontMode: 'manual', manualFont: 'font-montserrat', animationSpeed: 0.4, blurIntensity: 1, fadeRate: 0.08, momentumEnabled: true, physicsEnabled: false, neonGlow: false, glitchLevel: 0 },
+  "Blockbuster": { ...DEFAULT_BASE_SETTINGS, aspectRatio: 'cinema', cameraLens: '85mm', textScale: 2.5, fontMode: 'manual', manualFont: 'font-impact', wordSpacing: 1.5, blurIntensity: 6, physicsEnabled: false },
+  "Pop-Art Poster": { ...DEFAULT_BASE_SETTINGS, bgMode: 'white', textureOverlay: 'halftone', fxOutline: true, fxShadow: true, fontMode: 'manual', manualFont: 'font-anton', textScale: 1.8, wordGrouping: 1 }
 };
 
 export default function App() {
@@ -194,10 +194,14 @@ export default function App() {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
 
-  // Settings & Presets
+  // Settings & Presets - Hardened SSR Check for Vercel Deployments
   const [settings, setSettings] = useState(DEFAULT_BASE_SETTINGS);
   const [customPresets, setCustomPresets] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('kinetic_presets')) || {}; } catch(e) { return {}; }
+    if (typeof window === 'undefined') return {}; // Prevent SSR ReferenceError
+    try { 
+      const parsed = JSON.parse(localStorage.getItem('kinetic_presets')); 
+      return (parsed && typeof parsed === 'object') ? parsed : {};
+    } catch(e) { return {}; }
   });
   const [activePreset, setActivePreset] = useState("Default Mograph");
   
@@ -254,6 +258,7 @@ export default function App() {
 
   // --- IMMERSIVE UX TIMER ---
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     let timeout;
     const handleActivity = () => {
       setShowUI(true);
@@ -273,8 +278,19 @@ export default function App() {
     };
   }, [showSettings, isRecording]);
 
+  // --- FULLSCREEN NATIVE SYNC ---
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   // --- SPEECH RECOGNITION ENGINE ---
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       showErrorToast("Web Speech API not supported. Please use Chrome/Edge.");
@@ -285,7 +301,9 @@ export default function App() {
     recognition.continuous = true;
     recognition.interimResults = true;
     
-    const primaryLang = settings.languages.find(l => l !== 'en-US') || 'en-US';
+    // Fallback protection if language array is somehow lost
+    const safeLangs = settings.languages || ['en-US'];
+    const primaryLang = safeLangs.find(l => l !== 'en-US') || 'en-US';
     recognition.lang = primaryLang;
 
     recognition.onstart = () => { setError(''); setIsListening(true); };
@@ -326,7 +344,8 @@ export default function App() {
   };
 
   const toggleLanguage = (code) => {
-    let newLangs = [...settings.languages];
+    const safeLangs = settings.languages || ['en-US'];
+    let newLangs = [...safeLangs];
     if (newLangs.includes(code)) {
       newLangs = newLangs.filter(l => l !== code);
       if (newLangs.length === 0) newLangs = ['en-US']; 
@@ -341,7 +360,10 @@ export default function App() {
   const handleLoadPreset = (presetName) => {
     setActivePreset(presetName);
     const library = { ...PRESET_LIBRARY, ...(customPresets || {}) };
-    if (library[presetName]) setSettings(prev => ({ ...DEFAULT_BASE_SETTINGS, ...library[presetName], languages: prev.languages }));
+    if (library[presetName]) {
+       // Spread default base settings fully to ensure no missing keys cause WSOD
+       setSettings(prev => ({ ...DEFAULT_BASE_SETTINGS, ...library[presetName], languages: prev.languages || ['en-US'] }));
+    }
   };
 
   const handleSavePreset = () => {
@@ -361,12 +383,11 @@ export default function App() {
       return;
     }
     try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
          showErrorToast("Screen recording not supported in this browser environment.", 6000);
          return;
       }
 
-      // TWEAK 1: Request 60 FPS from the capture API
       const displayStream = await navigator.mediaDevices.getDisplayMedia({ 
         video: { 
           displaySurface: "browser",
@@ -375,7 +396,6 @@ export default function App() {
         audio: false 
       });
       
-      // TWEAK 2 & 3: Optimize Codec and bump Bitrate to 8 Mbps for smooth capture
       let options = { mimeType: 'video/webm' };
       const preferredMimeTypes = [
         'video/webm;codecs=h264',
@@ -384,15 +404,16 @@ export default function App() {
         'video/webm'
       ];
       
-      for (const mimeType of preferredMimeTypes) {
-        if (MediaRecorder.isTypeSupported(mimeType)) {
-          options = { 
-            mimeType: mimeType,
-            videoBitsPerSecond: 8000000 // 8 Mbps high bitrate
-          };
-          break;
-        }
-      }
+      try {
+         if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported) {
+            for (const mimeType of preferredMimeTypes) {
+               if (MediaRecorder.isTypeSupported(mimeType)) {
+                 options = { mimeType: mimeType, videoBitsPerSecond: 8000000 }; // 8 Mbps high bitrate
+                 break;
+               }
+            }
+         }
+      } catch (e) {}
 
       const recorder = new MediaRecorder(displayStream, options);
       const chunks = [];
@@ -410,7 +431,6 @@ export default function App() {
       displayStream.getVideoTracks()[0].onended = () => { if (recorder.state !== 'inactive') recorder.stop(); };
       mediaRecorderRef.current = recorder;
       
-      // TWEAK 4: TimeSlice chunking (100ms) to keep memory dumps steady during heavy rendering
       recorder.start(100);
       setIsRecording(true);
       setShowSettings(false);
@@ -512,7 +532,6 @@ export default function App() {
       baseFont = settingsRef.current.manualFont;
     } else if (settingsRef.current.fontMode === 'system') {
       baseFont = 'custom-system-font';
-      // Defensive string check to prevent .split() crash
       const rawSysFontString = settingsRef.current.customSystemFont || 'Arial';
       const sysFonts = rawSysFontString.split(',').map(s => s.trim()).filter(Boolean);
       chosenSysFont = sysFonts.length > 0 ? sysFonts[Math.floor(Math.random() * sysFonts.length)] : 'Arial';
@@ -557,11 +576,11 @@ export default function App() {
       const wpl = settingsRef.current.wordsPerLine === 0 ? getAutoWordsPerLine(settingsRef.current.aspectRatio) : settingsRef.current.wordsPerLine;
       const wrappedText = formatTextWrap(text, wpl);
       const lines = wrappedText.split('\n');
-      const maxChars = Math.max(...lines.map(l => l.length));
+      const maxChars = Math.max(0, ...lines.map(l => l.length));
       
       const prevWpl = settingsRef.current.wordsPerLine === 0 ? getAutoWordsPerLine(settingsRef.current.aspectRatio) : settingsRef.current.wordsPerLine;
       const prevWrapped = formatTextWrap(prevConfig.text, prevWpl);
-      const prevMaxChars = Math.max(...prevWrapped.split('\n').map(l => l.length));
+      const prevMaxChars = Math.max(0, ...prevWrapped.split('\n').map(l => l.length));
       
       const estPrevWidth = prevMaxChars * prevConfig.size * 0.55;
       const estWidth = maxChars * size * 0.55;
@@ -585,12 +604,15 @@ export default function App() {
     const wpl = settingsRef.current.wordsPerLine === 0 ? getAutoWordsPerLine(settingsRef.current.aspectRatio) : settingsRef.current.wordsPerLine;
     const wrappedText = formatTextWrap(latestWord.text, wpl);
     const lines = wrappedText.split('\n');
-    const maxChars = Math.max(...lines.map(l => l.length));
+    const maxChars = Math.max(0, ...lines.map(l => l.length));
 
     const estWidth = maxChars * latestWord.size * 0.6;
     const estHeight = lines.length * latestWord.size * (settingsRef.current.lineSpacing || 0.85);
     const padding = Math.max(200, latestWord.size * 1.5);
     
+    // Safety check for SSR window access
+    if (typeof window === 'undefined') return;
+
     const scaleX = window.innerWidth / (estWidth + padding);
     const scaleY = window.innerHeight / (estHeight + padding);
     let targetScale = Math.max(0.15, Math.min(Math.min(scaleX, scaleY), 3.0));
@@ -605,16 +627,22 @@ export default function App() {
     let camRotX = 0; let camRotY = 0; let camRotZ = isNaN(latestWord.rotation) ? 0 : -latestWord.rotation;
 
     if (settingsRef.current.cameraMode === 'manual') {
-      camX += settingsRef.current.manualPanX; camY += settingsRef.current.manualPanY;
-      camRotX += settingsRef.current.manualRotX; camRotY += settingsRef.current.manualRotY; camRotZ += settingsRef.current.manualRotZ;
+      camX += settingsRef.current.manualPanX || 0; camY += settingsRef.current.manualPanY || 0;
+      camRotX += settingsRef.current.manualRotX || 0; camRotY += settingsRef.current.manualRotY || 0; camRotZ += settingsRef.current.manualRotZ || 0;
     }
 
     setCamera({ x: camX, y: camY, scale: targetScale, rotationX: camRotX, rotationY: camRotY, rotationZ: camRotZ });
   };
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.error(err)); setIsFullscreen(true); } 
-    else { document.exitFullscreen(); setIsFullscreen(false); }
+    if (typeof document === 'undefined') return;
+    if (!document.fullscreenElement) { 
+      document.documentElement.requestFullscreen().catch(err => console.error(err)); 
+      setShowSettings(false); 
+    } 
+    else { 
+      document.exitFullscreen(); 
+    }
   };
 
   const getAspectRatioStyle = (isWhiteBg) => {
@@ -640,7 +668,6 @@ export default function App() {
          try { URL.revokeObjectURL(settings.customBgUrl); } catch(err) {} 
       }
       const url = URL.createObjectURL(file);
-      // Bulletproof file type check
       const type = (file.type && file.type.startsWith('video/')) ? 'video' : 'image';
       setSettings({...settings, bgMode: 'custom', customBgUrl: url, customBgType: type});
     } catch (error) {
@@ -662,7 +689,7 @@ export default function App() {
   const wrapperBgColor = isChromaGreen ? '#00FF00' : isChromaBlue ? '#0000FF' : isWhite ? '#FFFFFF' : '#050505';
 
   const renderShape = (s) => {
-    const style = { position: 'absolute', left: s.x + settings.spawnAnchorX, top: s.y + settings.spawnAnchorY, transform: `translate(-50%, -50%) rotate(${s.rotation}deg)`, opacity: s.opacity, zIndex: 5, pointerEvents: 'none' };
+    const style = { position: 'absolute', left: s.x + (settings.spawnAnchorX || 0), top: s.y + (settings.spawnAnchorY || 0), transform: `translate(-50%, -50%) rotate(${s.rotation}deg)`, opacity: s.opacity, zIndex: 5, pointerEvents: 'none' };
     switch(s.type) {
       case 'circle': return <div key={s.id} style={{...style, width: s.size, height: s.size, borderRadius: '50%', border: `4px solid ${s.color}`}} />;
       case 'square': return <div key={s.id} style={{...style, width: s.size, height: s.size, border: `4px solid ${s.color}`}} />;
@@ -674,10 +701,14 @@ export default function App() {
   };
 
   return (
-    <div className={`kinetic-wrapper relative w-full h-screen flex items-center justify-center overflow-hidden font-sans text-white select-none transition-colors duration-1000 ${!showUI && !showSettings ? 'cursor-none' : ''}`} style={{ backgroundColor: wrapperBgColor }}>
+    <div 
+      className={`kinetic-wrapper relative w-full h-screen flex items-center justify-center overflow-hidden font-sans text-white select-none transition-colors duration-1000 ${(!showUI && !showSettings) || isFullscreen ? 'cursor-none' : ''}`} 
+      style={{ backgroundColor: wrapperBgColor }}
+      onDoubleClick={toggleFullscreen}
+    >
       <style>{getGlobalStyles(settings.animationSpeed)}</style>
       
-      {isRecording && (
+      {isRecording && !isFullscreen && (
         <div className="absolute top-6 left-6 z-[100] flex items-center bg-black/60 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full">
           <div className="w-3 h-3 bg-red-500 rounded-full mr-3 rec-indicator shadow-[0_0_10px_red]"></div>
           <span className="text-xs font-bold tracking-widest uppercase">REC (Capture Active)</span>
@@ -941,7 +972,7 @@ export default function App() {
           </div>
 
           <div className="flex flex-col gap-2 border-t border-white/10 pt-4">
-            <label className="text-xs opacity-60 font-bold uppercase flex items-center"><MonitorPlay className="w-4 h-4 mr-2"/> Environment & Export</label>
+            <label className="text-xs opacity-60 font-bold uppercase flex items-center"><Monitor className="w-4 h-4 mr-2"/> Environment & Export</label>
             <div className="grid grid-cols-5 gap-1 mb-1">
               {['dark', 'white', 'vaporwave', 'plasma', 'custom'].map(bg => (
                 <button key={bg} onClick={() => setSettings({...settings, bgMode: bg})} className={`py-2 text-[8px] font-bold uppercase rounded transition-all ${settings.bgMode === bg ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>{bg}</button>
@@ -950,7 +981,6 @@ export default function App() {
             
             {settings.bgMode === 'custom' && (
                <label className="flex items-center justify-center w-full py-2 mt-1 mb-1 bg-white/10 hover:bg-white/20 border border-white/20 rounded cursor-pointer transition-colors">
-                 {/* Replaced strict lucide-react 'Upload' dependency with hardcoded bulletproof SVG */}
                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 mr-2 text-white"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                  <span className="text-[9px] font-bold uppercase text-white">{settings.customBgUrl ? 'Change Background' : 'Upload Image / Video'}</span>
                  <input type="file" accept="image/*,video/*" className="hidden" onChange={handleCustomBgUpload} />
@@ -1031,9 +1061,9 @@ export default function App() {
           <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
             <label className="text-xs opacity-60 font-bold uppercase flex items-center"><Globe className="w-4 h-4 mr-2"/> Languages</label>
             <div className="flex gap-2">
-               <button onClick={() => toggleLanguage('en-US')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg border ${settings.languages.includes('en-US') ? 'bg-white text-black border-white' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>ENG</button>
-               <button onClick={() => toggleLanguage('hi-IN')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg border ${settings.languages.includes('hi-IN') ? 'bg-white text-black border-white' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>HIN</button>
-               <button onClick={() => toggleLanguage('gu-IN')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg border ${settings.languages.includes('gu-IN') ? 'bg-white text-black border-white' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>GUJ</button>
+               <button onClick={() => toggleLanguage('en-US')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg border ${(settings.languages || []).includes('en-US') ? 'bg-white text-black border-white' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>ENG</button>
+               <button onClick={() => toggleLanguage('hi-IN')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg border ${(settings.languages || []).includes('hi-IN') ? 'bg-white text-black border-white' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>HIN</button>
+               <button onClick={() => toggleLanguage('gu-IN')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg border ${(settings.languages || []).includes('gu-IN') ? 'bg-white text-black border-white' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>GUJ</button>
             </div>
           </div>
 
@@ -1041,12 +1071,12 @@ export default function App() {
             <label className="text-xs opacity-60 font-bold uppercase">Focus & Pacing</label>
             
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold text-yellow-400">Anim Speed</span><span className="text-[10px] opacity-60 font-bold text-yellow-400">{settings.animationSpeed.toFixed(1)}x</span></div>
+              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold text-yellow-400">Anim Speed</span><span className="text-[10px] opacity-60 font-bold text-yellow-400">{(settings.animationSpeed || 1).toFixed(1)}x</span></div>
               <input type="range" min="0.2" max="3.0" step="0.1" value={settings.animationSpeed} onChange={(e) => setSettings({...settings, animationSpeed: parseFloat(e.target.value)})} onClick={(e) => handleSliderReset(e, 'animationSpeed', 1.0)} className="w-full accent-yellow-400" />
             </div>
 
             <div className="flex flex-col gap-1 mt-1">
-              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold">Fade Rate</span><span className="text-[10px] opacity-60 font-bold">{Math.round(settings.fadeRate * 100)}%</span></div>
+              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold">Fade Rate</span><span className="text-[10px] opacity-60 font-bold">{Math.round((settings.fadeRate || 0.15) * 100)}%</span></div>
               <input type="range" min="0.05" max="0.5" step="0.05" value={settings.fadeRate} onChange={(e) => setSettings({...settings, fadeRate: parseFloat(e.target.value)})} onClick={(e) => handleSliderReset(e, 'fadeRate', 0.15)} className="w-full accent-white" />
             </div>
             
@@ -1074,7 +1104,7 @@ export default function App() {
                  <div className="flex flex-col gap-1 mt-1">
                    <div className="flex justify-between items-center">
                      <span className="text-[10px] opacity-60 uppercase font-bold">Shadow Opacity</span>
-                     <span className="text-[10px] opacity-60 font-bold">{settings.manualShadowOpacity.toFixed(1)}</span>
+                     <span className="text-[10px] opacity-60 font-bold">{(settings.manualShadowOpacity || 0.8).toFixed(1)}</span>
                    </div>
                    <input type="range" min="0" max="1" step="0.1" value={settings.manualShadowOpacity} onChange={(e) => setSettings({...settings, manualShadowOpacity: parseFloat(e.target.value)})} onClick={(e) => handleSliderReset(e, 'manualShadowOpacity', 0.8)} className="w-full accent-yellow-400" />
                  </div>
@@ -1084,7 +1114,7 @@ export default function App() {
         </div>
       </div>
 
-      {error && (
+      {error && !isFullscreen && (
         <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-red-900/90 text-white px-6 py-3 rounded-xl flex items-center shadow-2xl z-50 backdrop-blur-md border border-red-500/50">
           <AlertCircle className="w-5 h-5 mr-3" />
           <p className="text-sm font-bold tracking-wide">{error}</p>
@@ -1092,9 +1122,9 @@ export default function App() {
       )}
 
       {/* UI Bottom Controls */}
-      <div className={`absolute bottom-8 left-0 right-0 flex justify-center items-center space-x-6 z-50 transition-all duration-500 ${showUI || showSettings ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+      <div className={`absolute bottom-8 left-0 right-0 flex justify-center items-center space-x-6 z-50 transition-all duration-500 ${(!isFullscreen && (showUI || showSettings)) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12 pointer-events-none'}`}>
         <button onClick={handleRecordToggle} title="Record Transparent Video" className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${isRecording ? 'bg-red-600 border-red-500 text-white animate-pulse' : isWhite ? 'bg-black/5 hover:bg-black/10 border-black/20 text-black hover:text-red-600' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white hover:text-red-400'}`}>
-          {isRecording ? <Square className="w-4 h-4" fill="currentColor" /> : <Video className="w-5 h-5" />}
+          {isRecording ? <StopCircle className="w-4 h-4" /> : <Video className="w-5 h-5" />}
         </button>
 
         <button onClick={toggleListening} className={`flex items-center justify-center w-16 h-16 rounded-full shadow-2xl transition-all duration-300 ${isListening ? 'bg-red-600 hover:bg-red-500 scale-110 animate-pulse text-white' : isWhite ? 'bg-black/5 hover:bg-black/10 backdrop-blur-md border border-black/20 text-black' : 'bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white'}`}>
