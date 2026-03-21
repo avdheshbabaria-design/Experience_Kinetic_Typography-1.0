@@ -27,12 +27,12 @@ const globalStyles = `
     position: absolute;
     top: 0; left: 0;
     transform-origin: center center;
-    transition: left 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
-                top 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: left calc(0.8s / var(--speed, 1)) cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                top calc(0.8s / var(--speed, 1)) cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
 
   .word-inner {
-    animation: wordAppear 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation: wordAppear calc(0.6s / var(--speed, 1)) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     display: inline-block;
     position: relative; /* Fixed layout bounding issues */
   }
@@ -66,7 +66,7 @@ const globalStyles = `
   }
 
   .camera-rig {
-    transition: transform 0.9s cubic-bezier(0.25, 1, 0.3, 1);
+    transition: transform calc(0.9s / var(--speed, 1)) cubic-bezier(0.25, 1, 0.3, 1);
     transform-origin: 0 0;
     will-change: transform;
     perspective: 1000px;
@@ -146,7 +146,7 @@ const DEFAULT_BASE_SETTINGS = {
   manualZoom: 1.0, spawnAnchorX: 0, spawnAnchorY: 0,
   fontMode: 'dynamic', manualFont: 'font-anton',
   textScale: 1.0, wordSpacing: 1.0, lineSpacing: 0.85, wordsPerLine: 0, textAlign: 'center',
-  fadeRate: 0.15, blurIntensity: 4, glitchLevel: 2, wordGrouping: 1,
+  fadeRate: 0.15, blurIntensity: 4, glitchLevel: 2, wordGrouping: 1, animationSpeed: 1.0,
   physicsEnabled: true, momentumEnabled: true, strobeFlicker: false, neonGlow: true,
   fxOutline: false, fxShadow: false, fxHighlight: false, bgMode: 'dark',
   manualTextColor: '#FFFFFF', manualShadowColor: '#FF00FF', manualShadowOpacity: 0.8,
@@ -593,7 +593,7 @@ export default function App() {
   };
 
   return (
-    <div className={`relative w-full h-screen flex items-center justify-center overflow-hidden font-sans text-white select-none transition-colors duration-1000 ${!showUI && !showSettings ? 'cursor-none' : ''}`} style={{ backgroundColor: wrapperBgColor }}>
+    <div className={`relative w-full h-screen flex items-center justify-center overflow-hidden font-sans text-white select-none transition-colors duration-1000 ${!showUI && !showSettings ? 'cursor-none' : ''}`} style={{ backgroundColor: wrapperBgColor, '--speed': settings.animationSpeed }}>
       <style>{globalStyles}</style>
       
       {isRecording && (
@@ -692,8 +692,8 @@ export default function App() {
         </div>
       </div>
 
-      {/* Settings Panel Overlay - BULLETPROOF SCROLL FIX */}
-      <div className={`absolute right-6 top-8 bottom-28 bg-black/70 backdrop-blur-3xl border border-white/10 rounded-3xl w-80 z-[60] shadow-2xl transition-all duration-500 flex flex-col ${showSettings ? 'opacity-100 translate-x-0 pointer-events-auto' : 'opacity-0 translate-x-12 pointer-events-none'}`}>
+      {/* Settings Panel Overlay - BULLETPROOF SCROLL FIX & HIGH CONTRAST */}
+      <div className={`absolute right-6 top-8 bottom-28 bg-black/95 backdrop-blur-3xl border border-white/20 rounded-3xl w-80 z-[60] shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-all duration-500 flex flex-col ${showSettings ? 'opacity-100 translate-x-0 pointer-events-auto' : 'opacity-0 translate-x-12 pointer-events-none'}`}>
         
         {/* Fixed Header & Close Button (Does not scroll) */}
         <div className="flex-shrink-0 pt-6 px-6 pb-4 relative z-10 border-b border-white/5">
@@ -906,16 +906,21 @@ export default function App() {
             <label className="text-xs opacity-60 font-bold uppercase">Focus & Pacing</label>
             
             <div className="flex flex-col gap-1">
+              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold text-yellow-400">Anim Speed</span><span className="text-[10px] opacity-60 font-bold text-yellow-400">{settings.animationSpeed.toFixed(1)}x</span></div>
+              <input type="range" min="0.2" max="3.0" step="0.1" value={settings.animationSpeed} onChange={(e) => setSettings({...settings, animationSpeed: parseFloat(e.target.value)})} onClick={(e) => handleSliderReset(e, 'animationSpeed', 1.0)} className="w-full accent-yellow-400" />
+            </div>
+
+            <div className="flex flex-col gap-1 mt-1">
               <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold">Fade Rate</span><span className="text-[10px] opacity-60 font-bold">{Math.round(settings.fadeRate * 100)}%</span></div>
               <input type="range" min="0.05" max="0.5" step="0.05" value={settings.fadeRate} onChange={(e) => setSettings({...settings, fadeRate: parseFloat(e.target.value)})} onClick={(e) => handleSliderReset(e, 'fadeRate', 0.15)} className="w-full accent-white" />
             </div>
             
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 mt-1">
               <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold">Focus Blur</span><span className="text-[10px] opacity-60 font-bold">{settings.blurIntensity}px</span></div>
               <input type="range" min="0" max="20" step="1" value={settings.blurIntensity} onChange={(e) => setSettings({...settings, blurIntensity: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'blurIntensity', 4)} className="w-full accent-white" />
             </div>
 
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 mt-1">
               <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold">Word Grouping</span><span className="text-[10px] opacity-60 font-bold">{settings.wordGrouping === 6 ? 'Infinity' : settings.wordGrouping}</span></div>
               <input type="range" min="1" max="6" step="1" value={settings.wordGrouping} onChange={(e) => setSettings({...settings, wordGrouping: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'wordGrouping', 1)} className="w-full accent-white" />
             </div>
