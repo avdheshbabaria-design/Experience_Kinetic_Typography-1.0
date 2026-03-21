@@ -365,14 +365,41 @@ export default function App() {
          showErrorToast("Screen recording not supported in this browser environment.", 6000);
          return;
       }
-      const displayStream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: "browser" }, audio: false });
-      const options = { mimeType: 'video/webm; codecs=vp9' };
+
+      // TWEAK 1: Request 60 FPS from the capture API
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({ 
+        video: { 
+          displaySurface: "browser",
+          frameRate: { ideal: 60, max: 60 }
+        }, 
+        audio: false 
+      });
+      
+      // TWEAK 2 & 3: Optimize Codec and bump Bitrate to 8 Mbps for smooth capture
+      let options = { mimeType: 'video/webm' };
+      const preferredMimeTypes = [
+        'video/webm;codecs=h264',
+        'video/webm;codecs=vp8',
+        'video/webm;codecs=vp9',
+        'video/webm'
+      ];
+      
+      for (const mimeType of preferredMimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          options = { 
+            mimeType: mimeType,
+            videoBitsPerSecond: 8000000 // 8 Mbps high bitrate
+          };
+          break;
+        }
+      }
+
       const recorder = new MediaRecorder(displayStream, options);
       const chunks = [];
 
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
       recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/webm' });
+        const blob = new Blob(chunks, { type: options.mimeType });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url; a.download = `kinetic-mograph-${Date.now()}.webm`; a.click();
@@ -382,7 +409,9 @@ export default function App() {
 
       displayStream.getVideoTracks()[0].onended = () => { if (recorder.state !== 'inactive') recorder.stop(); };
       mediaRecorderRef.current = recorder;
-      recorder.start();
+      
+      // TWEAK 4: TimeSlice chunking (100ms) to keep memory dumps steady during heavy rendering
+      recorder.start(100);
       setIsRecording(true);
       setShowSettings(false);
       setShowUI(false); 
