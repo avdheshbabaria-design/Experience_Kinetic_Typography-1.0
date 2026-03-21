@@ -1,6 +1,62 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Maximize, Minimize, AlertCircle, Sliders, Activity, Zap, Type, Globe, Camera, Monitor, X, Save, Bookmark, Video, StopCircle, Layers } from 'lucide-react';
 
+// 🔥 NEW: Moving-Window Deduplication Engine
+// This mathematically scans the end of the global text for any overlapping echo
+// caused by OS audio buffer loops when the Web Speech API restarts.
+const mergeTranscripts = (base, addition) => {
+  const bText = (base || '').trim();
+  const aText = (addition || '').trim();
+  if (!bText) return aText;
+  if (!aText) return bText;
+
+  const bWords = bText.split(/\s+/);
+  const aWords = aText.split(/\s+/);
+  
+  const cleanB = bText.toLowerCase().replace(/[.,!?]/g, '').split(/\s+/);
+  const cleanA = aText.toLowerCase().replace(/[.,!?]/g, '').split(/\s+/);
+
+  // We only need to check the last ~20 words of the base transcript for an overlap
+  const searchStart = Math.max(0, cleanB.length - 20);
+  
+  let bestMatchIndex = -1;
+  let maxMatchLen = 0;
+
+  // Slide a window across the end of the base transcript
+  for (let i = searchStart; i < cleanB.length; i++) {
+    let matchLen = 0;
+    while (
+      i + matchLen < cleanB.length && 
+      matchLen < cleanA.length && 
+      cleanB[i + matchLen] === cleanA[matchLen]
+    ) {
+      matchLen++;
+    }
+    
+    // For a valid echo overlap, the match must either consume the rest of the base, 
+    // OR consume the entire new addition.
+    if (matchLen > 0 && (matchLen === cleanA.length || i + matchLen === cleanB.length)) {
+      if (matchLen > maxMatchLen) {
+         maxMatchLen = matchLen;
+         bestMatchIndex = i;
+      }
+    }
+  }
+
+  if (bestMatchIndex !== -1) {
+    // We found an overlap echo! Slice off the echoed words and append the true new words.
+    const newWords = aWords.slice(maxMatchLen);
+    if (newWords.length > 0) {
+       return bText + ' ' + newWords.join(' ');
+    } else {
+       return bText;
+    }
+  }
+
+  // No overlap detected, safely append
+  return bText + ' ' + aText;
+};
+
 // --- CSS STYLES & FONTS ---
 const getGlobalStyles = (speed) => `
   @import url('https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Bodoni+Moda:ital,opsz,wght@0,6..96,900;1,6..96,900&family=Montserrat:ital,wght@0,900;1,900&family=VT323&family=Noto+Sans+Devanagari:wght@900&family=Noto+Sans+Gujarati:wght@900&display=swap');
@@ -212,6 +268,10 @@ export default function App() {
   const wordConfigs = useRef([]);
   const isListeningRef = useRef(false);
   const settingsRef = useRef(settings);
+  
+  // 🔥 Dual-Vault Speech Tracking 
+  const globalTranscriptRef = useRef('');
+  const sessionFinalRef = useRef('');
 
   const showErrorToast = (msg, duration = 6000) => {
     setError(msg);
@@ -315,12 +375,34 @@ export default function App() {
       else if (e.error !== 'no-speech') setIsListening(false);
     };
 
-    recognition.onend = () => { if (isListeningRef.current) { try { recognition.start(); } catch(e) {} } };
+    recognition.onend = () => { 
+      // Safely bank the session's final text using the moving-window overlap merger
+      globalTranscriptRef.current = mergeTranscripts(globalTranscriptRef.current, sessionFinalRef.current);
+      sessionFinalRef.current = '';
+      
+      if (isListeningRef.current) { try { recognition.start(); } catch(e) {} } 
+    };
 
     recognition.onresult = (event) => {
-      let fullTranscript = "";
-      for (let i = 0; i < event.results.length; ++i) { fullTranscript += event.results[i][0].transcript + " "; }
-      processTextStream(fullTranscript.trim());
+      let currentSessionFinal = '';
+      let interimTranscript = '';
+      
+      // Rebuild the current session directly to prevent array-stacking duplicates.
+      for (let i = 0; i < event.results.length; ++i) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          currentSessionFinal += transcript + ' ';
+        } else {
+          interimTranscript += transcript + ' ';
+        }
+      }
+      
+      sessionFinalRef.current = currentSessionFinal.trim();
+      const sessionTotal = (currentSessionFinal + interimTranscript).trim();
+      
+      // Merge the live session with the global vault to destroy OS audio echoes
+      const fullTranscript = mergeTranscripts(globalTranscriptRef.current, sessionTotal);
+      processTextStream(fullTranscript);
     };
 
     recognitionRef.current = recognition;
@@ -339,6 +421,8 @@ export default function App() {
       recognitionRef.current.stop();
     } else {
       wordConfigs.current = []; setWords([]); setBgShapes([]); setCamera({ x: 0, y: 0, scale: 1, rotationX: 0, rotationY: 0, rotationZ: 0 }); setError('');
+      globalTranscriptRef.current = ''; // Reset memory vaults on new session
+      sessionFinalRef.current = '';
       try { recognitionRef.current.start(); } catch(e) {}
     }
   };
