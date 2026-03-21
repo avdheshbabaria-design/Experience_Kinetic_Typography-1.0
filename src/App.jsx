@@ -901,7 +901,7 @@ export default function App() {
       </div>
 
       {/* Settings Panel Overlay - BULLETPROOF SCROLL FIX & HIGH CONTRAST */}
-      <div className={`absolute right-6 top-8 bottom-28 bg-black/95 backdrop-blur-3xl border border-white/20 rounded-3xl w-80 z-[60] shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-all duration-500 flex flex-col ${showSettings ? 'opacity-100 translate-x-0 pointer-events-auto' : 'opacity-0 translate-x-12 pointer-events-none'}`}>
+      <div className={`absolute right-6 top-8 bottom-28 bg-[#0a0a0a] bg-opacity-95 backdrop-blur-3xl border border-white/20 rounded-3xl w-80 z-[60] shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-all duration-500 flex flex-col ${showSettings ? 'opacity-100 translate-x-0 pointer-events-auto' : 'opacity-0 translate-x-12 pointer-events-none'}`}>
         
         {/* Fixed Header & Close Button (Does not scroll) */}
         <div className="flex-shrink-0 pt-6 px-6 pb-4 relative z-10 border-b border-white/5">
@@ -923,14 +923,14 @@ export default function App() {
               <select 
                 value={activePreset} 
                 onChange={(e) => handleLoadPreset(e.target.value)}
-                className="flex-1 bg-gray-900 border border-white/20 rounded-lg text-[10px] font-bold uppercase p-2 focus:outline-none text-white truncate"
+                className="flex-1 bg-[#1a1a1a] border border-gray-600 rounded-lg text-[10px] font-bold uppercase p-2 focus:outline-none text-white truncate"
               >
-                <optgroup label="Built-in Mograph" className="bg-gray-900 text-white">
-                  {Object.keys(PRESET_LIBRARY).map(p => <option key={p} value={p} className="bg-gray-900 text-white">{p}</option>)}
+                <optgroup label="Built-in Mograph" className="bg-[#1a1a1a] text-white">
+                  {Object.keys(PRESET_LIBRARY).map(p => <option key={p} value={p} className="bg-[#1a1a1a] text-white">{p}</option>)}
                 </optgroup>
                 {Object.keys(customPresets).length > 0 && (
-                  <optgroup label="My Custom Presets" className="bg-gray-900 text-white">
-                    {Object.keys(customPresets).map(p => <option key={p} value={p} className="bg-gray-900 text-white">{p}</option>)}
+                  <optgroup label="My Custom Presets" className="bg-[#1a1a1a] text-white">
+                    {Object.keys(customPresets).map(p => <option key={p} value={p} className="bg-[#1a1a1a] text-white">{p}</option>)}
                   </optgroup>
                 )}
               </select>
@@ -951,8 +951,8 @@ export default function App() {
                   <button onClick={() => setSettings({...settings, fontMode: 'system'})} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.fontMode === 'system' ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>System</button>
                </div>
                {settings.fontMode === 'manual' && (
-                  <select value={settings.manualFont} onChange={(e) => setSettings({...settings, manualFont: e.target.value})} className="w-full bg-gray-900 border border-white/20 rounded text-[10px] p-1.5 text-white">
-                    {FONTS_ALL.map(f => <option key={f} value={f} className="bg-gray-900 text-white">{f.replace('font-', '').toUpperCase()}</option>)}
+                  <select value={settings.manualFont} onChange={(e) => setSettings({...settings, manualFont: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-600 rounded text-[10px] p-2 text-white focus:outline-none">
+                    {FONTS_ALL.map(f => <option key={f} value={f} className="bg-[#1a1a1a] text-white">{f.replace('font-', '').toUpperCase()}</option>)}
                   </select>
                )}
                {settings.fontMode === 'system' && (
@@ -962,7 +962,7 @@ export default function App() {
                     onChange={(e) => setSettings({...settings, customSystemFont: e.target.value})} 
                     placeholder="e.g. Arial, Impact, Comic Sans MS" 
                     title="Enter a comma-separated list of fonts"
-                    className="w-full bg-black/50 border border-white/20 rounded text-[10px] p-1.5 text-white focus:outline-none focus:border-white/50 placeholder-white/40" 
+                    className="w-full bg-[#1a1a1a] border border-gray-600 rounded text-[10px] p-2 text-white focus:outline-none focus:border-gray-400 placeholder-gray-500" 
                   />
                )}
             </div>
@@ -1207,19 +1207,19 @@ export default function App() {
 
       {/* UI Bottom Controls */}
       <div className={`absolute bottom-8 left-0 right-0 flex justify-center items-center space-x-6 z-50 transition-all duration-500 ${(!isFullscreen && (showUI || showSettings)) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12 pointer-events-none'}`}>
-        <button onClick={handleRecordToggle} title="Record Transparent Video" className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${isRecording ? 'bg-red-600 border-red-500 text-white animate-pulse' : isWhite ? 'bg-black/5 hover:bg-black/10 border-black/20 text-black hover:text-red-600' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white hover:text-red-400'}`}>
+        <button onClick={handleRecordToggle} title="Record Transparent Video" className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${isRecording ? 'bg-red-600 border-red-500 text-white animate-pulse' : isWhite ? 'bg-gray-200 hover:bg-gray-300 border-gray-400 text-black hover:text-red-600 shadow-lg' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white hover:text-red-400'}`}>
           {isRecording ? <StopCircle className="w-4 h-4" /> : <Video className="w-5 h-5" />}
         </button>
 
-        <button onClick={toggleListening} className={`flex items-center justify-center w-16 h-16 rounded-full shadow-2xl transition-all duration-300 ${isListening ? 'bg-red-600 hover:bg-red-500 scale-110 animate-pulse text-white' : isWhite ? 'bg-black/5 hover:bg-black/10 backdrop-blur-md border border-black/20 text-black' : 'bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white'}`}>
+        <button onClick={toggleListening} className={`flex items-center justify-center w-16 h-16 rounded-full shadow-2xl transition-all duration-300 ${isListening ? 'bg-red-600 hover:bg-red-500 scale-110 animate-pulse text-white' : isWhite ? 'bg-gray-200 hover:bg-gray-300 border-gray-400 text-black shadow-lg' : 'bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white'}`}>
           {isListening ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
         </button>
 
-        <button onClick={toggleFullscreen} className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${isWhite ? 'bg-black/5 hover:bg-black/10 border-black/20 text-black' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'}`}>
+        <button onClick={toggleFullscreen} className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${isWhite ? 'bg-gray-200 hover:bg-gray-300 border-gray-400 text-black shadow-lg' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'}`}>
           {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
         </button>
 
-        <button onClick={() => setShowSettings(!showSettings)} className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${showSettings ? 'bg-white text-black border-white' : isWhite ? 'bg-black/5 hover:bg-black/10 border-black/20 text-black' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'}`}>
+        <button onClick={() => setShowSettings(!showSettings)} className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${showSettings ? 'bg-white text-black border-white' : isWhite ? 'bg-gray-200 hover:bg-gray-300 border-gray-400 text-black shadow-lg' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'}`}>
           <Sliders className="w-5 h-5" />
         </button>
       </div>
