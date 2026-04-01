@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Maximize, Minimize, AlertCircle, Sliders, Activity, Zap, Type, Globe, Camera, Monitor, X, Save, Bookmark, Video, StopCircle, Layers } from 'lucide-react';
+import { Mic, MicOff, Maximize, Minimize, AlertCircle, Sliders, Activity, Zap, Type, Globe, Camera, Monitor, X, Save, Bookmark, Video, StopCircle, Layers, Palette, FolderDown, RotateCcw } from 'lucide-react';
 
-// 🔥 NEW: Moving-Window Deduplication Engine
-// This mathematically scans the end of the global text for any overlapping echo
-// caused by OS audio buffer loops when the Web Speech API restarts.
+// 🔥 Dual-Vault Deduplication Engine
 const mergeTranscripts = (base, addition) => {
   const bText = (base || '').trim();
   const aText = (addition || '').trim();
@@ -16,13 +14,11 @@ const mergeTranscripts = (base, addition) => {
   const cleanB = bText.toLowerCase().replace(/[.,!?]/g, '').split(/\s+/);
   const cleanA = aText.toLowerCase().replace(/[.,!?]/g, '').split(/\s+/);
 
-  // We only need to check the last ~20 words of the base transcript for an overlap
   const searchStart = Math.max(0, cleanB.length - 20);
   
   let bestMatchIndex = -1;
   let maxMatchLen = 0;
 
-  // Slide a window across the end of the base transcript
   for (let i = searchStart; i < cleanB.length; i++) {
     let matchLen = 0;
     while (
@@ -33,8 +29,6 @@ const mergeTranscripts = (base, addition) => {
       matchLen++;
     }
     
-    // For a valid echo overlap, the match must either consume the rest of the base, 
-    // OR consume the entire new addition.
     if (matchLen > 0 && (matchLen === cleanA.length || i + matchLen === cleanB.length)) {
       if (matchLen > maxMatchLen) {
          maxMatchLen = matchLen;
@@ -44,7 +38,6 @@ const mergeTranscripts = (base, addition) => {
   }
 
   if (bestMatchIndex !== -1) {
-    // We found an overlap echo! Slice off the echoed words and append the true new words.
     const newWords = aWords.slice(maxMatchLen);
     if (newWords.length > 0) {
        return bText + ' ' + newWords.join(' ');
@@ -53,15 +46,51 @@ const mergeTranscripts = (base, addition) => {
     }
   }
 
-  // No overlap detected, safely append
   return bText + ' ' + aText;
 };
 
 // --- CSS STYLES & FONTS ---
-const getGlobalStyles = (speed) => `
-  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Bodoni+Moda:ital,opsz,wght@0,6..96,900;1,6..96,900&family=Montserrat:ital,wght@0,900;1,900&family=VT323&family=Noto+Sans+Devanagari:wght@900&family=Noto+Sans+Gujarati:wght@900&display=swap');
+const getGlobalStyles = (speed, customFonts = []) => `
+  ${customFonts.map(f => `@import url('https://fonts.googleapis.com/css2?family=${f.replace(/ /g, '+')}&display=swap');`).join('\n')}
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Anton&family=Bebas+Neue&family=Bodoni+Moda:ital,opsz,wght@0,6..96,900;1,6..96,900&family=Montserrat:ital,wght@0,900;1,900&family=VT323&family=Noto+Sans+Devanagari:wght@900&family=Noto+Sans+Gujarati:wght@900&display=swap');
 
   .kinetic-wrapper { --speed: ${speed || 1}; }
+
+  /* MODERN UI FONT */
+  .ui-font { font-family: 'Inter', sans-serif; }
+  
+  /* SLEEK GLASS SLIDERS */
+  .glass-slider {
+    -webkit-appearance: none; background: transparent; height: 24px; width: 100%; outline: none; margin: 4px 0; touch-action: none;
+  }
+  .glass-slider::-webkit-slider-runnable-track {
+    height: 4px; background: rgba(255, 255, 255, 0.15); border-radius: 2px; width: 100%; transition: background 0.2s;
+  }
+  .glass-slider:hover::-webkit-slider-runnable-track {
+    background: rgba(255, 255, 255, 0.3);
+  }
+  .glass-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; height: 16px; width: 16px; background: #ffffff;
+    border-radius: 50%; cursor: pointer; margin-top: -6px; box-shadow: 0 2px 6px rgba(0,0,0,0.4); 
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .glass-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  .glass-slider:active::-webkit-slider-thumb { transform: scale(0.9); cursor: grabbing; }
+
+  .glass-slider::-moz-range-track {
+    height: 4px; background: rgba(255, 255, 255, 0.15); border-radius: 2px; width: 100%;
+  }
+  .glass-slider::-moz-range-thumb {
+    height: 16px; width: 16px; background: #ffffff; border: none;
+    border-radius: 50%; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .glass-slider::-moz-range-thumb:hover { transform: scale(1.2); }
+  .glass-slider:active::-moz-range-thumb { transform: scale(0.9); }
+
+  /* KINETIC MOGRAPH ENGINE FX */
+  @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+  .gradient-text-fx { background: linear-gradient(90deg, var(--c1), var(--c2), var(--c3), var(--c1)); background-size: 300% 100%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradientShift 8s linear infinite; }
 
   .font-anton { font-family: 'Anton', sans-serif; text-transform: uppercase; }
   .font-bebas { font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; }
@@ -70,69 +99,30 @@ const getGlobalStyles = (speed) => `
   .font-vt323 { font-family: 'VT323', monospace; text-transform: uppercase; }
   .font-hi { font-family: 'Noto Sans Devanagari', sans-serif; font-weight: 900; }
   .font-gu { font-family: 'Noto Sans Gujarati', sans-serif; font-weight: 900; }
-
   .font-arial { font-family: Arial, Helvetica, sans-serif; font-weight: 900; }
   .font-times { font-family: "Times New Roman", Times, serif; font-weight: 900; }
   .font-courier { font-family: "Courier New", Courier, monospace; font-weight: bold; }
   .font-impact { font-family: Impact, sans-serif; letter-spacing: 1px; }
 
-  @keyframes wordAppear {
-    0% { transform: scale(0.2) translateZ(-500px); opacity: 0; filter: blur(30px); }
-    100% { transform: scale(1) translateZ(0); opacity: 1; filter: blur(0px); }
-  }
+  @keyframes wordAppear { 0% { transform: scale(0.2) translateZ(-500px); opacity: 0; filter: blur(30px); } 100% { transform: scale(1) translateZ(0); opacity: 1; filter: blur(0px); } }
+  .kinetic-word { position: absolute; top: 0; left: 0; transform-origin: center center; transition: left calc(0.8s / var(--speed, 1)) cubic-bezier(0.175, 0.885, 0.32, 1.275), top calc(0.8s / var(--speed, 1)) cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  .word-inner { animation: wordAppear calc(0.6s / var(--speed, 1)) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; display: inline-block; position: relative; }
 
-  .kinetic-word {
-    position: absolute;
-    top: 0; left: 0;
-    transform-origin: center center;
-    transition: left calc(0.8s / var(--speed, 1)) cubic-bezier(0.175, 0.885, 0.32, 1.275), 
-                top calc(0.8s / var(--speed, 1)) cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  }
+  @keyframes glitch-anim { 0% { transform: translate(0) skew(0deg); clip-path: inset(0 0 0 0); } 20% { transform: translate(-4px, 2px) skew(5deg); clip-path: inset(10% 0 60% 0); filter: hue-rotate(90deg); } 40% { transform: translate(4px, -2px) skew(-5deg); clip-path: inset(60% 0 10% 0); } 60% { transform: translate(0) skew(0deg); clip-path: inset(0 0 0 0); filter: hue-rotate(0deg); } 100% { transform: translate(0) skew(0deg); clip-path: inset(0 0 0 0); } }
+  @keyframes float-parallax { 0% { transform: translateY(0px) translateX(0px); } 50% { transform: translateY(-15px) translateX(10px); } 100% { transform: translateY(0px) translateX(0px); } }
 
-  .word-inner {
-    animation: wordAppear calc(0.6s / var(--speed, 1)) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    display: inline-block;
-    position: relative; 
-  }
+  .text-outline-fx { color: transparent !important; -webkit-text-stroke: var(--outline-width, 0.04em) var(--outline-color, #FFF); }
+  .text-highlight-fx::before { content: ''; position: absolute; inset: -0.05em -0.1em; background-color: var(--hl-color, rgba(255,255,255,0.2)); opacity: var(--hl-op, 0.8); transform: rotate(var(--hl-rot, 0deg)) scale(var(--hl-sx, 1), var(--hl-sy, 1)); border-radius: 0.1em; z-index: -1; pointer-events: none; }
+  .camera-rig { transition: transform calc(0.9s / var(--speed, 1)) cubic-bezier(0.25, 1, 0.3, 1); transform-origin: 0 0; will-change: transform; perspective: 1000px; }
 
-  @keyframes glitch-anim {
-    0% { transform: translate(0) skew(0deg); clip-path: inset(0 0 0 0); }
-    20% { transform: translate(-4px, 2px) skew(5deg); clip-path: inset(10% 0 60% 0); filter: hue-rotate(90deg); }
-    40% { transform: translate(4px, -2px) skew(-5deg); clip-path: inset(60% 0 10% 0); }
-    60% { transform: translate(0) skew(0deg); clip-path: inset(0 0 0 0); filter: hue-rotate(0deg); }
-    100% { transform: translate(0) skew(0deg); clip-path: inset(0 0 0 0); }
-  }
-
-  @keyframes float-parallax {
-    0% { transform: translateY(0px) translateX(0px); }
-    50% { transform: translateY(-15px) translateX(10px); }
-    100% { transform: translateY(0px) translateX(0px); }
-  }
-
-  /* POP-ART FX */
-  .text-outline-fx {
-    color: transparent !important;
-    -webkit-text-stroke: var(--outline-width, 0.04em) var(--outline-color, #FFF);
-  }
-
-  .text-highlight-fx::before {
-    content: ''; position: absolute; inset: -0.05em -0.1em;
-    background-color: var(--hl-color, rgba(255,255,255,0.2)); opacity: var(--hl-op, 0.8);
-    transform: rotate(var(--hl-rot, 0deg)) scale(var(--hl-sx, 1), var(--hl-sy, 1));
-    border-radius: 0.1em; z-index: -1; pointer-events: none;
-  }
-
-  .camera-rig {
-    transition: transform calc(0.9s / var(--speed, 1)) cubic-bezier(0.25, 1, 0.3, 1);
-    transform-origin: 0 0;
-    will-change: transform;
-    perspective: 1000px;
-  }
+  /* GENERATIVE ENGINE FX */
+  @keyframes float-up { 0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; } 100% { transform: translate(calc(-50% + var(--driftX, 0px)), -500px) scale(0); opacity: 0; } }
+  @keyframes blob-morph { 0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; } 50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; } 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; } }
+  @keyframes pulse-line { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.8; box-shadow: 0 0 10px currentColor; } }
 
   /* BACKGROUND ENVIRONMENTS */
   .noise { position: absolute; inset: 0; pointer-events: none; z-index: 50; opacity: 0.06; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
   .vignette { box-shadow: inset 0 0 200px rgba(0,0,0,0.95); pointer-events: none; position: absolute; inset: 0; z-index: 40; }
-  
   @keyframes vaporwave-pan { 0% { background-position: 0 0; } 100% { background-position: 0 50px; } }
   .vaporwave-grid { position: absolute; bottom: -20%; left: -50%; width: 200%; height: 60%; background-image: linear-gradient(rgba(255,0,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,255,0.4) 1px, transparent 1px); background-size: 50px 50px; transform: perspective(500px) rotateX(75deg); pointer-events: none; animation: vaporwave-pan 1.5s linear infinite; }
   @keyframes plasma-spin { 100% { transform: rotate(360deg); } }
@@ -148,7 +138,6 @@ const getGlobalStyles = (speed) => `
   .chaos-invert { filter: invert(1) hue-rotate(180deg) contrast(1.5); }
   .chaos-vhs { filter: contrast(1.5) saturate(2) hue-rotate(15deg); mix-blend-mode: hard-light; }
 
-  /* Recording Indicators */
   @keyframes recPulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
   .rec-indicator { animation: recPulse 1.5s infinite; }
 
@@ -157,8 +146,38 @@ const getGlobalStyles = (speed) => `
   .settings-scroll::-webkit-scrollbar { width: 6px; }
   .settings-scroll::-webkit-scrollbar-track { background: transparent; }
   .settings-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
-  .settings-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+  .settings-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
 `;
+
+// --- UI COMPONENTS (MODERN GLASSMORPHISM) ---
+const GlassBtn = ({ active, onClick, children, className = "", icon: Icon }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center justify-center gap-1.5 rounded-xl text-[10px] sm:text-xs font-semibold tracking-wide px-3 py-3 sm:py-2 transition-all duration-300 focus:outline-none touch-manipulation border ${
+      active 
+        ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]' 
+        : 'bg-white/5 text-white/80 border-white/10 hover:bg-white/15 hover:border-white/20'
+    } ${className}`}
+  >
+    {Icon && <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+    {children}
+  </button>
+);
+
+const GlassSlider = ({ label, value, min, max, step, onChange, displayVal, onReset }) => (
+  <div 
+    className="flex flex-col p-3 rounded-xl bg-white/5 border border-white/5 transition-colors group hover:bg-white/10" 
+    onClick={(e) => { if ((e.ctrlKey || e.metaKey) && onReset) onReset(); }}
+    title="Ctrl+Click to Reset"
+  >
+    <div className="flex justify-between items-center mb-1">
+       <span className="text-[10px] uppercase font-semibold tracking-wider text-white/50 group-hover:text-white/80 transition-colors">{label}</span>
+       <span className="text-xs font-medium text-white/90">{displayVal !== undefined ? displayVal : value}</span>
+    </div>
+    <input type="range" min={min} max={max} step={step} value={value} onChange={onChange} className="glass-slider w-full" />
+  </div>
+);
+
 
 // --- CONFIGURATION POOLS ---
 const FONTS_DYNAMIC = ['font-anton', 'font-bebas', 'font-bodoni', 'font-montserrat', 'font-vt323'];
@@ -171,6 +190,20 @@ const COLORS_LIGHT_BG = ['#000000', '#1A1A1A', '#E63946', '#1D3557', '#457B9D'];
 const ROTATIONS = [0, 0, 0, 90, -90, 5, -5, 10, -10];
 const DIRECTIONS = ['right', 'bottom', 'diagonal-down', 'diagonal-up', 'overlap'];
 const SHAPE_TYPES = ['circle', 'square', 'triangle', 'cross', 'asterisk'];
+
+const POPART_ASSETS = ['⚡', '💥', '⭐', '🗯️', '💢', '✨'];
+const HUD_ASSETS = ['[ ]', '┼', 'SYS.RDY', '0x8F9A', '///', 'REC', '✛', '∿', '▼'];
+const EMOJI_ASSETS = ['🔥', '🚀', '✨', '💀', '💯', '👽', '👁️', '🧊', '🌀', '❤️', '👀', '💡'];
+
+const ENGINES = [
+  { id: 'geometry', label: 'Shapes' },
+  { id: 'constellation', label: 'Constell.' },
+  { id: 'particles', label: 'Particles' },
+  { id: 'popart', label: 'Pop-Art' },
+  { id: 'cyberhud', label: 'Cyber-HUD' },
+  { id: 'blobs', label: 'Fluid Blobs' },
+  { id: 'emoji', label: 'Emoji FX' }
+];
 
 const LENS_OPTICS = { '18mm': 0.3, '24mm': 0.5, '35mm': 1.0, '55mm': 1.6, '85mm': 2.5, '200mm': 4.5 };
 
@@ -204,14 +237,15 @@ const DEFAULT_BASE_SETTINGS = {
   manualZoom: 1.0, spawnAnchorX: 0, spawnAnchorY: 0,
   fontMode: 'dynamic', manualFont: 'font-anton',
   textScale: 1.0, wordSpacing: 1.0, lineSpacing: 0.85, wordsPerLine: 0, textAlign: 'center',
+  colorMode: 'auto', customColor1: '#FF00FF', customColor2: '#00FFFF', customColor3: '#39FF14',
   fadeRate: 0.15, blurIntensity: 4, glitchLevel: 2, wordGrouping: 1, animationSpeed: 1.0,
   physicsEnabled: true, momentumEnabled: true, strobeFlicker: false, neonGlow: true,
   fxOutline: false, fxShadow: false, fxHighlight: false, bgMode: 'dark',
+  engineIntensities: { geometry: 0, constellation: 0, particles: 0, popart: 0, cyberhud: 0, blobs: 0, emoji: 0 },
   manualTextColor: '#FFFFFF', manualShadowColor: '#FF00FF', manualShadowOpacity: 0.8,
-  customSystemFont: 'Arial',
+  customGoogleFonts: [], 
   chaosRgbLevel: 0, chaosVhsLevel: 0, chaosInvertLevel: 0, chaosShakeLevel: 0, 
   textureOverlay: 'none', 
-  iconEngine: false, 
   customBgUrl: '', customBgType: '' 
 };
 
@@ -219,21 +253,21 @@ const DEFAULT_BASE_SETTINGS = {
 const PRESET_LIBRARY = {
   "Default Mograph": { ...DEFAULT_BASE_SETTINGS },
   "Subtle Natural Fade": { ...DEFAULT_BASE_SETTINGS, physicsEnabled: false, momentumEnabled: false, blurIntensity: 2, fadeRate: 0.05, animationSpeed: 0.5, fontMode: 'manual', manualFont: 'font-arial', neonGlow: false, fxShadow: false, glitchLevel: 0, cameraMode: 'manual', manualZoom: 1.1 },
-  "TikTok Overdrive": { ...DEFAULT_BASE_SETTINGS, aspectRatio: 'tiktok', cameraLens: '18mm', wordGrouping: 6, wordsPerLine: 2, textScale: 1.5, physicsEnabled: false, fontMode: 'manual', manualFont: 'font-bebas', fxShadow: true, chaosShakeLevel: 6, chaosRgbLevel: 4, iconEngine: true },
-  "Comic Book": { ...DEFAULT_BASE_SETTINGS, fontMode: 'manual', manualFont: 'font-impact', textureOverlay: 'halftone', fxOutline: true, fxShadow: true, wordGrouping: 1, textScale: 1.5, bgMode: 'vaporwave', iconEngine: true },
-  "Cinematic Trailer": { ...DEFAULT_BASE_SETTINGS, aspectRatio: 'cinema', cameraLens: '55mm', fontMode: 'manual', manualFont: 'font-bodoni', wordGrouping: 2, blurIntensity: 6, fadeRate: 0.1, textureOverlay: 'grunge' },
-  "Vaporwave CRT": { ...DEFAULT_BASE_SETTINGS, bgMode: 'vaporwave', fontMode: 'manual', manualFont: 'font-vt323', neonGlow: true, glitchLevel: 4, momentumEnabled: true, fxHighlight: true, textureOverlay: 'crt', chaosVhsLevel: 6, chaosRgbLevel: 3 },
-  "Hacker Terminal": { ...DEFAULT_BASE_SETTINGS, bgMode: 'dark', fontMode: 'manual', manualFont: 'font-courier', wordGrouping: 6, textAlign: 'left', manualTextColor: '#39FF14', wordsPerLine: 6, textureOverlay: 'crt', chaosVhsLevel: 4, chaosInvertLevel: 1 },
-  "Strobe Rave": { ...DEFAULT_BASE_SETTINGS, strobeFlicker: true, neonGlow: true, bgMode: 'plasma', fxHighlight: true, wordGrouping: 2, chaosRgbLevel: 8, chaosInvertLevel: 4, chaosShakeLevel: 8, iconEngine: true },
+  "TikTok Overdrive": { ...DEFAULT_BASE_SETTINGS, aspectRatio: 'tiktok', cameraLens: '18mm', wordGrouping: 6, wordsPerLine: 2, textScale: 1.5, physicsEnabled: false, fontMode: 'manual', manualFont: 'font-bebas', fxShadow: true, chaosShakeLevel: 6, chaosRgbLevel: 4, engineIntensities: { popart: 7, emoji: 3 } },
+  "Comic Book": { ...DEFAULT_BASE_SETTINGS, fontMode: 'manual', manualFont: 'font-impact', textureOverlay: 'halftone', fxOutline: true, fxShadow: true, wordGrouping: 1, textScale: 1.5, bgMode: 'vaporwave', engineIntensities: { popart: 8 } },
+  "Cinematic Trailer": { ...DEFAULT_BASE_SETTINGS, aspectRatio: 'cinema', cameraLens: '55mm', fontMode: 'manual', manualFont: 'font-bodoni', wordGrouping: 2, blurIntensity: 6, fadeRate: 0.1, textureOverlay: 'grunge', engineIntensities: { particles: 9 } },
+  "Vaporwave CRT": { ...DEFAULT_BASE_SETTINGS, bgMode: 'vaporwave', fontMode: 'manual', manualFont: 'font-vt323', neonGlow: true, glitchLevel: 4, momentumEnabled: true, fxHighlight: true, textureOverlay: 'crt', chaosVhsLevel: 6, chaosRgbLevel: 3, engineIntensities: { cyberhud: 6, geometry: 3 } },
+  "Hacker Terminal": { ...DEFAULT_BASE_SETTINGS, bgMode: 'dark', fontMode: 'manual', manualFont: 'font-courier', wordGrouping: 6, textAlign: 'left', manualTextColor: '#39FF14', wordsPerLine: 6, textureOverlay: 'crt', chaosVhsLevel: 4, chaosInvertLevel: 1, engineIntensities: { cyberhud: 9 } },
+  "Strobe Rave": { ...DEFAULT_BASE_SETTINGS, strobeFlicker: true, neonGlow: true, bgMode: 'plasma', fxHighlight: true, wordGrouping: 2, chaosRgbLevel: 8, chaosInvertLevel: 4, chaosShakeLevel: 8, engineIntensities: { geometry: 9, emoji: 5 } },
   "Chroma Key Overlay": { ...DEFAULT_BASE_SETTINGS, bgMode: 'chroma-green', textureOverlay: 'none', chaosRgbLevel: 0, chaosVhsLevel: 0, chaosInvertLevel: 0, chaosShakeLevel: 0, fxShadow: false, fxHighlight: false, glitchLevel: 0, neonGlow: false, fontMode: 'manual', manualFont: 'font-montserrat', textScale: 1.5, wordGrouping: 6 },
   "Typewriter Doc": { ...DEFAULT_BASE_SETTINGS, bgMode: 'white', fontMode: 'manual', manualFont: 'font-courier', textAlign: 'left', wordGrouping: 6, wordsPerLine: 6, physicsEnabled: false, momentumEnabled: false, textScale: 0.8, neonGlow: false },
   "Clean Corporate": { ...DEFAULT_BASE_SETTINGS, bgMode: 'white', fontMode: 'manual', manualFont: 'font-arial', neonGlow: false, blurIntensity: 2, fadeRate: 0.1, physicsEnabled: false, manualTextColor: '#1D3557' },
-  "Neon Noir": { ...DEFAULT_BASE_SETTINGS, bgMode: 'dark', fontMode: 'manual', manualFont: 'font-bodoni', fxOutline: true, fxShadow: false, neonGlow: true, blurIntensity: 8, fadeRate: 0.05, glitchLevel: 0 },
+  "Neon Noir": { ...DEFAULT_BASE_SETTINGS, bgMode: 'dark', fontMode: 'manual', manualFont: 'font-bodoni', fxOutline: true, fxShadow: false, neonGlow: true, blurIntensity: 8, fadeRate: 0.05, glitchLevel: 0, engineIntensities: { constellation: 9, particles: 3 } },
   "Anxiety Attack": { ...DEFAULT_BASE_SETTINGS, chaosShakeLevel: 8, chaosVhsLevel: 5, glitchLevel: 8, animationSpeed: 2.0, fadeRate: 0.3, textScale: 0.6, fontMode: 'dynamic', physicsEnabled: true },
-  "Cyberpunk City": { ...DEFAULT_BASE_SETTINGS, bgMode: 'plasma', fontMode: 'manual', manualFont: 'font-anton', fxShadow: true, glitchLevel: 5, neonGlow: true, chaosRgbLevel: 4, textScale: 1.2 },
-  "Zen Garden": { ...DEFAULT_BASE_SETTINGS, fontMode: 'manual', manualFont: 'font-montserrat', animationSpeed: 0.4, blurIntensity: 1, fadeRate: 0.08, momentumEnabled: true, physicsEnabled: false, neonGlow: false, glitchLevel: 0 },
+  "Cyberpunk City": { ...DEFAULT_BASE_SETTINGS, bgMode: 'plasma', fontMode: 'manual', manualFont: 'font-anton', fxShadow: true, glitchLevel: 5, neonGlow: true, chaosRgbLevel: 4, textScale: 1.2, engineIntensities: { cyberhud: 8, particles: 6 } },
+  "Zen Garden": { ...DEFAULT_BASE_SETTINGS, fontMode: 'manual', manualFont: 'font-montserrat', animationSpeed: 0.4, blurIntensity: 1, fadeRate: 0.08, momentumEnabled: true, physicsEnabled: false, neonGlow: false, glitchLevel: 0, engineIntensities: { blobs: 8, particles: 2 } },
   "Blockbuster": { ...DEFAULT_BASE_SETTINGS, aspectRatio: 'cinema', cameraLens: '85mm', textScale: 2.5, fontMode: 'manual', manualFont: 'font-impact', wordSpacing: 1.5, blurIntensity: 6, physicsEnabled: false },
-  "Pop-Art Poster": { ...DEFAULT_BASE_SETTINGS, bgMode: 'white', textureOverlay: 'halftone', fxOutline: true, fxShadow: true, fontMode: 'manual', manualFont: 'font-anton', textScale: 1.8, wordGrouping: 1 }
+  "Pop-Art Poster": { ...DEFAULT_BASE_SETTINGS, bgMode: 'white', textureOverlay: 'halftone', fxOutline: true, fxShadow: true, fontMode: 'manual', manualFont: 'font-anton', textScale: 1.8, wordGrouping: 1, engineIntensities: { popart: 8, geometry: 3 } }
 };
 
 export default function App() {
@@ -246,14 +280,15 @@ export default function App() {
   // UI & Recording States
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [activeTab, setActiveTab] = useState('disk'); 
   const [showUI, setShowUI] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
 
-  // Settings & Presets - Hardened SSR Check for Vercel Deployments
+  // Settings & Presets 
   const [settings, setSettings] = useState(DEFAULT_BASE_SETTINGS);
   const [customPresets, setCustomPresets] = useState(() => {
-    if (typeof window === 'undefined') return {}; // Prevent SSR ReferenceError
+    if (typeof window === 'undefined') return {}; 
     try { 
       const parsed = JSON.parse(localStorage.getItem('kinetic_presets')); 
       return (parsed && typeof parsed === 'object') ? parsed : {};
@@ -269,13 +304,21 @@ export default function App() {
   const isListeningRef = useRef(false);
   const settingsRef = useRef(settings);
   
-  // 🔥 Dual-Vault Speech Tracking 
+  // Dual-Vault Speech Tracking 
   const globalTranscriptRef = useRef('');
   const sessionFinalRef = useRef('');
 
   const showErrorToast = (msg, duration = 6000) => {
     setError(msg);
     if (msg) setTimeout(() => setError(''), duration);
+  };
+
+  const resetParam = (key, val) => setSettings(prev => ({ ...prev, [key]: val }));
+  
+  const resetManualCamera = () => {
+    setSettings(prev => ({
+      ...prev, manualPanX: 0, manualPanY: 0, manualRotX: 0, manualRotY: 0, manualRotZ: 0
+    }));
   };
 
   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
@@ -338,12 +381,9 @@ export default function App() {
     };
   }, [showSettings, isRecording]);
 
-  // --- FULLSCREEN NATIVE SYNC ---
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
+    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
@@ -361,7 +401,6 @@ export default function App() {
     recognition.continuous = true;
     recognition.interimResults = true;
     
-    // Fallback protection if language array is somehow lost
     const safeLangs = settings.languages || ['en-US'];
     const primaryLang = safeLangs.find(l => l !== 'en-US') || 'en-US';
     recognition.lang = primaryLang;
@@ -371,15 +410,13 @@ export default function App() {
     recognition.onerror = (e) => {
       if (e.error === 'not-allowed') showErrorToast("Microphone access blocked.");
       else if (e.error === 'network') showErrorToast("Network error: Speech API requires internet.");
-      else if (e.error === 'language-not-supported') showErrorToast(`Language ${primaryLang} not supported. Install local OS keyboard.`);
+      else if (e.error === 'language-not-supported') showErrorToast(`Language ${primaryLang} not supported.`);
       else if (e.error !== 'no-speech') setIsListening(false);
     };
 
     recognition.onend = () => { 
-      // Safely bank the session's final text using the moving-window overlap merger
       globalTranscriptRef.current = mergeTranscripts(globalTranscriptRef.current, sessionFinalRef.current);
       sessionFinalRef.current = '';
-      
       if (isListeningRef.current) { try { recognition.start(); } catch(e) {} } 
     };
 
@@ -387,7 +424,6 @@ export default function App() {
       let currentSessionFinal = '';
       let interimTranscript = '';
       
-      // Rebuild the current session directly to prevent array-stacking duplicates.
       for (let i = 0; i < event.results.length; ++i) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
@@ -400,7 +436,6 @@ export default function App() {
       sessionFinalRef.current = currentSessionFinal.trim();
       const sessionTotal = (currentSessionFinal + interimTranscript).trim();
       
-      // Merge the live session with the global vault to destroy OS audio echoes
       const fullTranscript = mergeTranscripts(globalTranscriptRef.current, sessionTotal);
       processTextStream(fullTranscript);
     };
@@ -421,7 +456,7 @@ export default function App() {
       recognitionRef.current.stop();
     } else {
       wordConfigs.current = []; setWords([]); setBgShapes([]); setCamera({ x: 0, y: 0, scale: 1, rotationX: 0, rotationY: 0, rotationZ: 0 }); setError('');
-      globalTranscriptRef.current = ''; // Reset memory vaults on new session
+      globalTranscriptRef.current = ''; 
       sessionFinalRef.current = '';
       try { recognitionRef.current.start(); } catch(e) {}
     }
@@ -437,17 +472,27 @@ export default function App() {
     setSettings({...settings, languages: newLangs});
   };
 
-  const handleSliderReset = (e, key, defaultValue) => {
-    if (e.ctrlKey || e.metaKey) setSettings(prev => ({ ...prev, [key]: defaultValue }));
-  };
-
   const handleLoadPreset = (presetName) => {
     setActivePreset(presetName);
     const library = { ...PRESET_LIBRARY, ...(customPresets || {}) };
     if (library[presetName]) {
-       // Spread default base settings fully to ensure no missing keys cause WSOD
-       setSettings(prev => ({ ...DEFAULT_BASE_SETTINGS, ...library[presetName], languages: prev.languages || ['en-US'] }));
+       const selected = library[presetName];
+       let mergedIntensities = { ...DEFAULT_BASE_SETTINGS.engineIntensities, ...(selected.engineIntensities || {}) };
+       if (selected.bgEngine && selected.bgEngine !== 'none' && !selected.engineIntensities) mergedIntensities[selected.bgEngine] = 5;
+       setSettings(prev => ({ 
+         ...DEFAULT_BASE_SETTINGS, ...selected, engineIntensities: mergedIntensities, languages: prev.languages || ['en-US'] 
+       }));
     }
+  };
+
+  const handleInstallFont = (fontName, inputElemId) => {
+    if (!fontName || !fontName.trim()) return;
+    const cleanName = fontName.trim();
+    const newCustomFonts = [...(settings.customGoogleFonts || [])];
+    if (!newCustomFonts.includes(cleanName)) newCustomFonts.push(cleanName);
+    setSettings({...settings, customGoogleFonts: newCustomFonts, fontMode: 'manual', manualFont: cleanName});
+    const inputElem = document.getElementById(inputElemId);
+    if (inputElem) inputElem.value = '';
   };
 
   const handleSavePreset = () => {
@@ -468,40 +513,21 @@ export default function App() {
     }
     try {
       if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-         showErrorToast("Screen recording not supported in this browser environment.", 6000);
-         return;
+         showErrorToast("Screen recording not supported in this browser environment.", 6000); return;
       }
-
-      const displayStream = await navigator.mediaDevices.getDisplayMedia({ 
-        video: { 
-          displaySurface: "browser",
-          frameRate: { ideal: 60, max: 60 }
-        }, 
-        audio: false 
-      });
-      
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: "browser", frameRate: { ideal: 60, max: 60 } }, audio: false });
       let options = { mimeType: 'video/webm' };
-      const preferredMimeTypes = [
-        'video/webm;codecs=h264',
-        'video/webm;codecs=vp8',
-        'video/webm;codecs=vp9',
-        'video/webm'
-      ];
-      
+      const preferredMimeTypes = ['video/webm;codecs=h264', 'video/webm;codecs=vp8', 'video/webm;codecs=vp9', 'video/webm'];
       try {
          if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported) {
             for (const mimeType of preferredMimeTypes) {
-               if (MediaRecorder.isTypeSupported(mimeType)) {
-                 options = { mimeType: mimeType, videoBitsPerSecond: 8000000 }; // 8 Mbps high bitrate
-                 break;
-               }
+               if (MediaRecorder.isTypeSupported(mimeType)) { options = { mimeType: mimeType, videoBitsPerSecond: 8000000 }; break; }
             }
          }
       } catch (e) {}
 
       const recorder = new MediaRecorder(displayStream, options);
       const chunks = [];
-
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: options.mimeType });
@@ -511,21 +537,12 @@ export default function App() {
         setIsRecording(false);
         displayStream.getTracks().forEach(track => track.stop());
       };
-
       displayStream.getVideoTracks()[0].onended = () => { if (recorder.state !== 'inactive') recorder.stop(); };
       mediaRecorderRef.current = recorder;
-      
-      recorder.start(100);
-      setIsRecording(true);
-      setShowSettings(false);
-      setShowUI(false); 
+      recorder.start(100); setIsRecording(true); setShowSettings(false); setShowUI(false); 
     } catch (err) {
       console.error("Screen capture failed:", err);
-      if (err.name === 'NotAllowedError' || err.message?.includes('permissions policy')) {
-        showErrorToast("Embedded view restricts built-in recording. Please use an external screen recorder (like OBS/QuickTime) along with the Chroma Key background mode.", 8000);
-      } else {
-        showErrorToast("Screen recording permission denied or not supported by browser.", 6000);
-      }
+      showErrorToast("Screen recording permission denied or environment restricted.", 6000);
     }
   };
 
@@ -555,24 +572,45 @@ export default function App() {
 
     chunks.forEach((chunkObj, index) => {
       if (!wordConfigs.current[index]) {
-        const newWord = generateWordConfig(chunkObj.text, index, wordConfigs.current[index - 1]);
+        const prevConfig = wordConfigs.current[index - 1];
+        const newWord = generateWordConfig(chunkObj.text, index, prevConfig);
         wordConfigs.current[index] = newWord;
         needsRender = true;
 
-        if (settingsRef.current.iconEngine && Math.random() > 0.4) {
-          const type = SHAPE_TYPES[Math.floor(Math.random() * SHAPE_TYPES.length)];
-          const bgShape = {
-            id: Date.now() + Math.random(),
-            type,
-            x: newWord.x + (Math.random() * 600 - 300),
-            y: newWord.y + (Math.random() * 600 - 300),
-            size: Math.random() * 200 + 40,
-            rotation: Math.random() * 360,
-            color: settingsRef.current.bgMode === 'vaporwave' ? COLORS_VAPOR[Math.floor(Math.random()*COLORS_VAPOR.length)] : COLORS_STD[Math.floor(Math.random()*COLORS_STD.length)],
-            opacity: Math.random() * 0.4 + 0.1
-          };
-          setBgShapes(prev => [...prev.slice(-12), bgShape]); 
+        const intensities = settingsRef.current.engineIntensities || {};
+        let newShapes = [];
+        const basePalette = settingsRef.current.bgMode === 'vaporwave' ? COLORS_VAPOR : COLORS_STD;
+        const randomColor = () => basePalette[Math.floor(Math.random() * basePalette.length)];
+
+        if (intensities.geometry > 0 && Math.random() < 0.15 * intensities.geometry) {
+          newShapes.push({ id: Date.now()+Math.random(), type: SHAPE_TYPES[Math.floor(Math.random() * SHAPE_TYPES.length)], x: newWord.x + (Math.random() * 600 - 300), y: newWord.y + (Math.random() * 600 - 300), size: Math.random() * 200 + 40, rotation: Math.random() * 360, color: randomColor(), opacity: Math.random() * 0.4 + 0.1 });
         }
+        if (intensities.constellation > 0 && prevConfig && Math.random() < 0.15 * intensities.constellation) {
+          const dx = newWord.x - prevConfig.x; const dy = newWord.y - prevConfig.y;
+          const length = Math.hypot(dx, dy); const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+          newShapes.push({ id: Date.now()+Math.random(), type: 'constellation', x: prevConfig.x, y: prevConfig.y, length, angle, color: newWord.color, opacity: 0.6 });
+          newShapes.push({ id: Date.now()+Math.random(), type: 'node', x: newWord.x, y: newWord.y, size: 8, color: newWord.color, opacity: 0.9 });
+        }
+        if (intensities.particles > 0 && Math.random() < 0.2 * intensities.particles) {
+          const numParticles = Math.floor(Math.random() * intensities.particles) + Math.ceil(intensities.particles / 1.5); 
+          for(let p=0; p<numParticles; p++) {
+             newShapes.push({ id: Date.now()+Math.random(), type: 'particle', x: newWord.x + (Math.random() * 150 - 75), y: newWord.y + (Math.random() * 150 - 75), size: Math.random() * 6 + 2, color: randomColor(), duration: (Math.random() * 2 + 1.5).toFixed(1) });
+          }
+        }
+        if (intensities.popart > 0 && Math.random() < 0.15 * intensities.popart) {
+          newShapes.push({ id: Date.now()+Math.random(), type: 'popart', symbol: POPART_ASSETS[Math.floor(Math.random()*POPART_ASSETS.length)], x: newWord.x + (Math.random() * 300 - 150), y: newWord.y + (Math.random() * 300 - 150), size: Math.random() * 80 + 40, rotation: Math.random() * 60 - 30, color: randomColor() });
+        }
+        if (intensities.cyberhud > 0 && Math.random() < 0.15 * intensities.cyberhud) {
+          newShapes.push({ id: Date.now()+Math.random(), type: 'hud', symbol: HUD_ASSETS[Math.floor(Math.random()*HUD_ASSETS.length)], x: newWord.x + (Math.random() * 400 - 200), y: newWord.y + (Math.random() * 400 - 200), size: Math.random() * 24 + 12, rotation: Math.random() * 90, color: randomColor() });
+        }
+        if (intensities.blobs > 0 && Math.random() < 0.15 * intensities.blobs) {
+          newShapes.push({ id: Date.now()+Math.random(), type: 'blob', x: newWord.x + (Math.random() * 400 - 200), y: newWord.y + (Math.random() * 400 - 200), size: Math.random() * 400 + 200, color: randomColor(), duration: (Math.random() * 10 + 5).toFixed(1) });
+        }
+        if (intensities.emoji > 0 && Math.random() < 0.15 * intensities.emoji) {
+          newShapes.push({ id: Date.now()+Math.random(), type: 'emoji', symbol: EMOJI_ASSETS[Math.floor(Math.random()*EMOJI_ASSETS.length)], x: newWord.x + (Math.random() * 250 - 125), y: newWord.y + (Math.random() * 250 - 125), size: Math.random() * 50 + 30, rotation: Math.random() * 360 });
+        }
+
+        if (newShapes.length > 0) setBgShapes(prev => [...prev, ...newShapes].slice(-150)); 
 
         if (settingsRef.current.physicsEnabled) {
           for (let p = Math.max(0, index - 20); p < index; p++) {
@@ -600,40 +638,35 @@ export default function App() {
     }
 
     if (needsRender) {
-      const displayWords = wordConfigs.current.slice(-25);
-      setWords([...displayWords]);
+      setWords([...wordConfigs.current.slice(-25)]);
       updateCamera(wordConfigs.current[wordConfigs.current.length - 1]);
     }
   };
 
   const generateWordConfig = (text, index, prevConfig) => {
-    const isHindi = /[\u0900-\u097F]/.test(text);
-    const isGujarati = /[\u0A80-\u0AFF]/.test(text);
+    const isHindi = /[\u0900-\u097F]/.test(text); const isGujarati = /[\u0A80-\u0AFF]/.test(text);
+    let baseFont = 'font-anton'; let installedCustomFont = '';
     
-    let baseFont = 'font-anton';
-    let chosenSysFont = 'Arial';
     if (settingsRef.current.fontMode === 'manual') {
       baseFont = settingsRef.current.manualFont;
-    } else if (settingsRef.current.fontMode === 'system') {
-      baseFont = 'custom-system-font';
-      const rawSysFontString = settingsRef.current.customSystemFont || 'Arial';
-      const sysFonts = rawSysFontString.split(',').map(s => s.trim()).filter(Boolean);
-      chosenSysFont = sysFonts.length > 0 ? sysFonts[Math.floor(Math.random() * sysFonts.length)] : 'Arial';
+      if (!baseFont.startsWith('font-')) { installedCustomFont = baseFont; baseFont = 'custom-imported-font'; }
     } else {
       baseFont = FONTS_DYNAMIC[Math.floor(Math.random() * FONTS_DYNAMIC.length)];
     }
     const font = isHindi ? 'font-hi' : isGujarati ? 'font-gu' : baseFont;
-    
     const size = SIZES[Math.floor(Math.random() * SIZES.length)] * (settingsRef.current.textScale || 1.0);
     const palette = settingsRef.current.bgMode === 'vaporwave' ? COLORS_VAPOR : settingsRef.current.bgMode === 'white' ? COLORS_LIGHT_BG : COLORS_STD;
-    let rawColor = palette[Math.floor(Math.random() * palette.length)];
+    
+    let rawColor;
+    if (settingsRef.current.colorMode === 'solid') { rawColor = settingsRef.current.customColor1; } 
+    else if (settingsRef.current.colorMode === 'palette' || settingsRef.current.colorMode === 'gradient') {
+      const customPal = [settingsRef.current.customColor1, settingsRef.current.customColor2, settingsRef.current.customColor3];
+      rawColor = customPal[Math.floor(Math.random() * customPal.length)];
+    } else { rawColor = palette[Math.floor(Math.random() * palette.length)]; }
     
     const isOutline = settingsRef.current.fxOutline;
-    const color = isOutline ? 'transparent' : rawColor;
-    
-    const outlineColors = settingsRef.current.bgMode === 'white' 
-        ? ['#000000', '#E63946', '#1D3557', '#000000', '#FF00FF']
-        : ['#FFFFFF', '#FF00FF', '#00FFFF', '#39FF14', '#E63946'];
+    const color = isOutline && settingsRef.current.colorMode !== 'gradient' ? 'transparent' : rawColor;
+    const outlineColors = settingsRef.current.bgMode === 'white' ? ['#000000', '#E63946', '#1D3557', '#000000', '#FF00FF'] : ['#FFFFFF', '#FF00FF', '#00FFFF', '#39FF14', '#E63946'];
     const outlineColor = isOutline ? outlineColors[Math.floor(Math.random() * outlineColors.length)] : '#FFFFFF';
     const outlineWidth = (0.02 + Math.random() * 0.04).toFixed(3) + 'em';
     
@@ -658,13 +691,8 @@ export default function App() {
     if (prevConfig) {
       const dir = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
       const wpl = settingsRef.current.wordsPerLine === 0 ? getAutoWordsPerLine(settingsRef.current.aspectRatio) : settingsRef.current.wordsPerLine;
-      const wrappedText = formatTextWrap(text, wpl);
-      const lines = wrappedText.split('\n');
-      const maxChars = Math.max(0, ...lines.map(l => l.length));
-      
-      const prevWpl = settingsRef.current.wordsPerLine === 0 ? getAutoWordsPerLine(settingsRef.current.aspectRatio) : settingsRef.current.wordsPerLine;
-      const prevWrapped = formatTextWrap(prevConfig.text, prevWpl);
-      const prevMaxChars = Math.max(0, ...prevWrapped.split('\n').map(l => l.length));
+      const maxChars = Math.max(0, ...formatTextWrap(text, wpl).split('\n').map(l => l.length));
+      const prevMaxChars = Math.max(0, ...formatTextWrap(prevConfig.text, wpl).split('\n').map(l => l.length));
       
       const estPrevWidth = prevMaxChars * prevConfig.size * 0.55;
       const estWidth = maxChars * size * 0.55;
@@ -679,31 +707,23 @@ export default function App() {
       }
     } 
 
-    return { id: index, text, font, customFontName: chosenSysFont, color, isOutline, outlineColor, outlineWidth, rotation, x, y, size, glitchSeed, flickerDelay, floatDuration, floatDelay, shadowStr, hlColor, hlRot, hlSx, hlSy, hlOp };
+    return { id: index, text, font, customFontName: installedCustomFont, color, isOutline, outlineColor, outlineWidth, rotation, x, y, size, glitchSeed, flickerDelay, floatDuration, floatDelay, shadowStr, hlColor, hlRot, hlSx, hlSy, hlOp };
   };
 
   const updateCamera = (latestWord) => {
-    if (!latestWord) return;
+    if (!latestWord || typeof window === 'undefined') return;
 
     const wpl = settingsRef.current.wordsPerLine === 0 ? getAutoWordsPerLine(settingsRef.current.aspectRatio) : settingsRef.current.wordsPerLine;
-    const wrappedText = formatTextWrap(latestWord.text, wpl);
-    const lines = wrappedText.split('\n');
+    const lines = formatTextWrap(latestWord.text, wpl).split('\n');
     const maxChars = Math.max(0, ...lines.map(l => l.length));
 
     const estWidth = maxChars * latestWord.size * 0.6;
     const estHeight = lines.length * latestWord.size * (settingsRef.current.lineSpacing || 0.85);
     const padding = Math.max(200, latestWord.size * 1.5);
     
-    // Safety check for SSR window access
-    if (typeof window === 'undefined') return;
-
     const scaleX = window.innerWidth / (estWidth + padding);
     const scaleY = window.innerHeight / (estHeight + padding);
-    let targetScale = Math.max(0.15, Math.min(Math.min(scaleX, scaleY), 3.0));
-    
-    const lensMultiplier = LENS_OPTICS[settingsRef.current.cameraLens] || 1.0;
-    const userZoom = settingsRef.current.manualZoom || 1.0;
-    targetScale = targetScale * lensMultiplier * userZoom;
+    let targetScale = Math.max(0.15, Math.min(Math.min(scaleX, scaleY), 3.0)) * (LENS_OPTICS[settingsRef.current.cameraLens] || 1.0) * (settingsRef.current.manualZoom || 1.0);
     if (isNaN(targetScale) || !isFinite(targetScale)) targetScale = 1;
 
     let camX = isNaN(latestWord.x) ? 0 : -(latestWord.x + (settingsRef.current.spawnAnchorX || 0));
@@ -720,43 +740,31 @@ export default function App() {
 
   const toggleFullscreen = () => {
     if (typeof document === 'undefined') return;
-    if (!document.fullscreenElement) { 
-      document.documentElement.requestFullscreen().catch(err => console.error(err)); 
-      setShowSettings(false); 
-    } 
-    else { 
-      document.exitFullscreen(); 
-    }
+    if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.error(err)); setShowSettings(false); } 
+    else { document.exitFullscreen(); }
   };
 
   const getAspectRatioStyle = (isWhiteBg) => {
     const borderCol = isWhiteBg ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
     const baseStyle = { position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.5s cubic-bezier(0.25, 1, 0.3, 1)' };
     switch(settings.aspectRatio) {
-      case 'tiktok': return { ...baseStyle, width: 'min(100vw, 50.6vh)', height: 'min(100vh, 177vw)', borderRadius: '20px', border: `2px solid ${borderCol}` };
-      case 'youtube': return { ...baseStyle, width: 'min(100vw, 160vh)', height: 'min(100vh, 56.25vw)', border: `2px solid ${borderCol}` };
-      case 'cinema': return { ...baseStyle, width: 'min(100vw, 210vh)', height: 'min(100vh, 42.8vw)', border: `2px solid ${borderCol}` };
-      case 'imax': return { ...baseStyle, width: 'min(100vw, 143vh)', height: 'min(100vh, 69.9vw)', border: `2px solid ${borderCol}` };
-      case 'square': return { ...baseStyle, width: 'min(90vw, 90vh)', height: 'min(90vw, 90vh)', borderRadius: '10px', border: `2px solid ${borderCol}` };
+      case 'tiktok': return { ...baseStyle, width: 'min(100vw, 50.6vh)', height: 'min(100vh, 177vw)', border: `1px solid ${borderCol}`, borderRadius: '1rem' };
+      case 'youtube': return { ...baseStyle, width: 'min(100vw, 160vh)', height: 'min(100vh, 56.25vw)', border: `1px solid ${borderCol}` };
+      case 'cinema': return { ...baseStyle, width: 'min(100vw, 210vh)', height: 'min(100vh, 42.8vw)', border: `1px solid ${borderCol}` };
+      case 'imax': return { ...baseStyle, width: 'min(100vw, 143vh)', height: 'min(100vh, 69.9vw)', border: `1px solid ${borderCol}` };
+      case 'square': return { ...baseStyle, width: 'min(90vw, 90vh)', height: 'min(90vw, 90vh)', border: `1px solid ${borderCol}`, borderRadius: '1rem' };
       case 'fullscreen': default: return { ...baseStyle, width: '100%', height: '100%' };
     }
   };
-
-  const resetManualCamera = () => { setSettings({...settings, manualPanX: 0, manualPanY: 0, manualRotX: 0, manualRotY: 0, manualRotZ: 0}); };
 
   const handleCustomBgUpload = (e) => {
     try {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
-      if (settings.customBgUrl) {
-         try { URL.revokeObjectURL(settings.customBgUrl); } catch(err) {} 
-      }
+      if (settings.customBgUrl) { try { URL.revokeObjectURL(settings.customBgUrl); } catch(err) {} }
       const url = URL.createObjectURL(file);
-      const type = (file.type && file.type.startsWith('video/')) ? 'video' : 'image';
-      setSettings({...settings, bgMode: 'custom', customBgUrl: url, customBgType: type});
-    } catch (error) {
-      console.error("Error loading custom background:", error);
-    }
+      setSettings({...settings, bgMode: 'custom', customBgUrl: url, customBgType: (file.type && file.type.startsWith('video/')) ? 'video' : 'image'});
+    } catch (error) { console.error("Error loading background:", error); }
   };
 
   const safeScale = isNaN(camera.scale) ? 1 : camera.scale;
@@ -773,10 +781,21 @@ export default function App() {
   const wrapperBgColor = isChromaGreen ? '#00FF00' : isChromaBlue ? '#0000FF' : isWhite ? '#FFFFFF' : '#050505';
 
   const renderShape = (s) => {
-    const style = { position: 'absolute', left: s.x + (settings.spawnAnchorX || 0), top: s.y + (settings.spawnAnchorY || 0), transform: `translate(-50%, -50%) rotate(${s.rotation}deg)`, opacity: s.opacity, zIndex: 5, pointerEvents: 'none' };
+    const baseX = s.x + (settings.spawnAnchorX || 0);
+    const baseY = s.y + (settings.spawnAnchorY || 0);
+    
+    if (s.type === 'constellation') return <div key={s.id} style={{ position: 'absolute', left: baseX, top: baseY - 1, width: s.length, height: 1, backgroundColor: s.color, transformOrigin: '0 50%', transform: `rotate(${s.angle}deg)`, opacity: s.opacity, animation: 'pulse-line 2s infinite', zIndex: 4, pointerEvents: 'none' }} />;
+    if (s.type === 'node') return <div key={s.id} style={{ position: 'absolute', left: baseX, top: baseY, width: s.size, height: s.size, backgroundColor: s.color, borderRadius: '50%', transform: `translate(-50%, -50%)`, opacity: s.opacity, zIndex: 5, pointerEvents: 'none', boxShadow: `0 0 10px ${s.color}` }} />;
+    if (s.type === 'particle') return <div key={s.id} style={{ position: 'absolute', left: baseX, top: baseY, width: s.size, height: s.size, backgroundColor: s.color, borderRadius: '50%', transform: `translate(-50%, -50%)`, zIndex: 4, pointerEvents: 'none', animation: `float-up ${s.duration}s ease-out forwards`, opacity: 0.8, '--driftX': (Math.random() * 200 - 100) + 'px' }} />;
+    if (s.type === 'popart') return <div key={s.id} className="font-impact" style={{ position: 'absolute', left: baseX, top: baseY, fontSize: s.size, color: s.color, transform: `translate(-50%, -50%) rotate(${s.rotation}deg)`, zIndex: 5, pointerEvents: 'none', textShadow: '4px 4px 0px rgba(0,0,0,0.8)' }}>{s.symbol}</div>;
+    if (s.type === 'hud') return <div key={s.id} className="font-vt323" style={{ position: 'absolute', left: baseX, top: baseY, fontSize: s.size, color: s.color, transform: `translate(-50%, -50%) rotate(${s.rotation}deg)`, zIndex: 5, pointerEvents: 'none', opacity: 0.7, letterSpacing: '4px' }}>{s.symbol}</div>;
+    if (s.type === 'blob') return <div key={s.id} style={{ position: 'absolute', left: baseX, top: baseY, width: s.size, height: s.size, backgroundColor: s.color, transform: `translate(-50%, -50%)`, zIndex: 1, pointerEvents: 'none', opacity: 0.25, filter: 'blur(40px)', animation: `blob-morph ${s.duration}s infinite linear` }} />;
+    if (s.type === 'emoji') return <div key={s.id} style={{ position: 'absolute', left: baseX, top: baseY, fontSize: s.size, transform: `translate(-50%, -50%) rotate(${s.rotation}deg)`, zIndex: 5, pointerEvents: 'none', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.5))' }}>{s.symbol}</div>;
+    
+    const style = { position: 'absolute', left: baseX, top: baseY, transform: `translate(-50%, -50%) rotate(${s.rotation}deg)`, opacity: s.opacity, zIndex: 5, pointerEvents: 'none' };
     switch(s.type) {
-      case 'circle': return <div key={s.id} style={{...style, width: s.size, height: s.size, borderRadius: '50%', border: `4px solid ${s.color}`}} />;
-      case 'square': return <div key={s.id} style={{...style, width: s.size, height: s.size, border: `4px solid ${s.color}`}} />;
+      case 'circle': return <div key={s.id} style={{...style, width: s.size, height: s.size, borderRadius: '50%', border: `2px solid ${s.color}`}} />;
+      case 'square': return <div key={s.id} style={{...style, width: s.size, height: s.size, border: `2px solid ${s.color}`}} />;
       case 'triangle': return <div key={s.id} style={{...style, width: 0, height: 0, borderLeft: `${s.size/2}px solid transparent`, borderRight: `${s.size/2}px solid transparent`, borderBottom: `${s.size}px solid ${s.color}`}} />;
       case 'cross': return <div key={s.id} className="font-sans font-black" style={{...style, color: s.color, fontSize: s.size, lineHeight: 1}}>+</div>;
       case 'asterisk': return <div key={s.id} className="font-sans font-black" style={{...style, color: s.color, fontSize: s.size, lineHeight: 1}}>*</div>;
@@ -790,66 +809,44 @@ export default function App() {
       style={{ backgroundColor: wrapperBgColor }}
       onDoubleClick={toggleFullscreen}
     >
-      <style>{getGlobalStyles(settings.animationSpeed)}</style>
+      <style>{getGlobalStyles(settings.animationSpeed, settings.customGoogleFonts)}</style>
       
-      {isRecording && !isFullscreen && (
-        <div className="absolute top-6 left-6 z-[100] flex items-center bg-black/60 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full">
-          <div className="w-3 h-3 bg-red-500 rounded-full mr-3 rec-indicator shadow-[0_0_10px_red]"></div>
-          <span className="text-xs font-bold tracking-widest uppercase">REC (Capture Active)</span>
-        </div>
-      )}
-
       {/* Global Chaos Invert applied to Matte Box */}
       <div style={getAspectRatioStyle(isWhite)} className={`${chaos.invert && !isChroma ? 'chaos-invert' : ''}`}>
-        
-        {/* Custom Background Render */}
         {settings.bgMode === 'custom' && settings.customBgUrl && (
           <div className="absolute inset-0 pointer-events-none z-0">
-            {settings.customBgType === 'video' ? (
-              <video src={settings.customBgUrl} autoPlay loop muted playsInline className="w-full h-full object-cover opacity-80" />
-            ) : (
-              <img src={settings.customBgUrl} className="w-full h-full object-cover opacity-80" alt="Custom BG" />
-            )}
+            {settings.customBgType === 'video' ? <video src={settings.customBgUrl} autoPlay loop muted playsInline className="w-full h-full object-cover opacity-80" /> : <img src={settings.customBgUrl} className="w-full h-full object-cover opacity-80" alt="Custom BG" />}
           </div>
         )}
-
-        {/* Dynamic Backgrounds */}
         {!isChroma && (
           <>
             {!isWhite && <div className="noise" />}
             {!isWhite && <div className="vignette" />}
             {settings.bgMode === 'vaporwave' && <div className="vaporwave-grid" />}
             {settings.bgMode === 'plasma' && <div className="plasma-bg" />}
-            
-            {/* Texture Overlays */}
             {settings.textureOverlay === 'halftone' && <div className="texture-halftone" />}
             {settings.textureOverlay === 'crt' && <div className="texture-crt" />}
             {settings.textureOverlay === 'grunge' && <div className="texture-grunge" />}
           </>
         )}
-
-        {/* Global Chaos VHS Filter */}
         <div className={`absolute inset-0 pointer-events-none z-40 ${chaos.vhs && !isChroma ? 'chaos-vhs bg-white/5' : ''}`}></div>
 
         <div className={`camera-rig absolute ${chaos.rgb && !isChroma ? 'chaos-rgb' : ''}`} style={{ transform: `scale(${safeScale}) rotateX(${safeRotX}deg) rotateY(${safeRotY}deg) rotateZ(${safeRotZ}deg) translate(${safeX + chaos.shakeX}px, ${safeY + chaos.shakeY}px)` }}>
           
-          {/* Abstract Geometry Engine Output */}
           {!isChroma && bgShapes.map(s => renderShape(s))}
 
           {words.map((w, idx) => {
             const isLatest = idx === words.length - 1;
             const age = words.length - 1 - idx;
-            
             const targetOpacity = isLatest ? 1 : Math.max(0, 1 - (age * (settings.fadeRate || 0.15)));
             const targetBlur = isLatest ? 0 : age * (settings.blurIntensity || 4);
-            
             const isGlitching = w.glitchSeed < (settings.glitchLevel || 0);
             const glitchStyle = isGlitching ? { animation: `glitch-anim ${1 + w.glitchSeed}s infinite` } : {};
             const momentumStyle = settings.momentumEnabled ? { animation: `float-parallax ${w.floatDuration} ease-in-out ${w.floatDelay} infinite` } : {};
             const markerClass = settings.fxHighlight && w.hlOp > 0.4 && !isChroma ? 'text-highlight-fx' : '';
             
             const isInfinity = settings.wordGrouping === 6;
-            const finalColor = (isInfinity && !w.isOutline) ? settings.manualTextColor : w.color;
+            const finalColor = (isInfinity && !w.isOutline && settings.colorMode === 'auto') ? settings.manualTextColor : w.color;
             
             let finalShadow = 'none';
             if (settings.fxShadow) {
@@ -862,33 +859,37 @@ export default function App() {
             
             const displayWpl = settings.wordsPerLine === 0 ? getAutoWordsPerLine(settings.aspectRatio) : settings.wordsPerLine;
             const finalText = formatTextWrap(w.text, displayWpl);
+            const isGradient = settings.colorMode === 'gradient';
+            const isIndic = w.font === 'font-hi' || w.font === 'font-gu';
+            const activeLineHeight = isIndic ? Math.max(1.3, settings.lineSpacing) : settings.lineSpacing;
 
             return (
               <div 
                 key={w.id} 
-                className={`kinetic-word ${w.font !== 'custom-system-font' ? w.font : ''} ${w.isOutline ? 'text-outline-fx' : ''} ${settings.strobeFlicker && !isChroma ? 'flicker-fx' : ''}`}
+                className={`kinetic-word ${w.font !== 'custom-imported-font' ? w.font : ''} ${w.isOutline ? 'text-outline-fx' : ''} ${settings.strobeFlicker && !isChroma ? 'flicker-fx' : ''}`}
                 style={{ 
-                  fontFamily: w.font === 'custom-system-font' ? w.customFontName : undefined,
+                  fontFamily: w.font === 'custom-imported-font' ? `"${w.customFontName}", sans-serif` : undefined,
                   fontSize: `${w.size}px`, color: finalColor, left: `${w.x + (settings.spawnAnchorX || 0)}px`, top: `${w.y + (settings.spawnAnchorY || 0)}px`, 
                   transform: `translate(-50%, -50%) rotate(${w.rotation}deg)`, 
                   zIndex: isLatest ? 50 : 10,
                   animationDelay: `${w.flickerDelay}s`,
                   textAlign: settings.textAlign,
                   whiteSpace: settings.textAlign === 'justify' ? 'normal' : 'pre',
-                  lineHeight: settings.lineSpacing,
+                  lineHeight: activeLineHeight,
                   '--outline-color': w.outlineColor, '--outline-width': w.outlineWidth,
-                  '--hl-color': w.hlColor, '--hl-rot': w.hlRot, '--hl-sx': w.hlSx, '--hl-sy': w.hlSy, '--hl-op': w.hlOp
+                  '--hl-color': w.hlColor, '--hl-rot': w.hlRot, '--hl-sx': w.hlSx, '--hl-sy': w.hlSy, '--hl-op': w.hlOp,
+                  '--c1': settings.customColor1, '--c2': settings.customColor2, '--c3': settings.customColor3
                 }}
               >
-                {/* Fixed Highlight Frenzy by placing markerClass on inner container */}
                 <div 
-                   className={`word-inner ${markerClass}`} 
+                   className={`word-inner ${markerClass} ${isGradient ? 'gradient-text-fx' : ''}`} 
                    style={{ 
                      opacity: targetOpacity, 
                      filter: `blur(${targetBlur}px) ${settings.neonGlow && !isChroma ? 'drop-shadow(0 0 20px currentColor)' : ''}`, 
                      textShadow: finalShadow,
                      transition: 'opacity 0.4s, filter 0.4s', 
                      width: settings.textAlign === 'justify' ? `${w.size * 5}px` : 'auto',
+                     padding: isIndic ? '0.25em 0' : '0.05em 0', 
                      ...glitchStyle, ...momentumStyle
                    }}
                 >
@@ -900,334 +901,295 @@ export default function App() {
         </div>
       </div>
 
-      {/* Settings Panel Overlay - BULLETPROOF SCROLL FIX & HIGH CONTRAST */}
-      <div className={`absolute right-6 top-8 bottom-28 bg-[#0a0a0a] bg-opacity-95 backdrop-blur-3xl border border-white/20 rounded-3xl w-80 z-[60] shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-all duration-500 flex flex-col ${showSettings ? 'opacity-100 translate-x-0 pointer-events-auto' : 'opacity-0 translate-x-12 pointer-events-none'}`}>
+      {/* --- MODERN GLASSMORPHISM CONTROL PANEL --- */}
+      <div className={`absolute right-4 sm:right-6 top-8 bottom-32 sm:bottom-8 bg-white/10 backdrop-blur-3xl border border-white/20 w-[calc(100vw-2rem)] sm:w-[380px] z-[60] shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-3xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col ui-font ${showSettings ? 'opacity-100 translate-x-0 pointer-events-auto scale-100' : 'opacity-0 translate-x-12 pointer-events-none scale-95'}`}>
         
-        {/* Fixed Header & Close Button (Does not scroll) */}
-        <div className="flex-shrink-0 pt-6 px-6 pb-4 relative z-10 border-b border-white/5">
-          <button onClick={() => setShowSettings(false)} className="absolute top-4 left-4 p-1.5 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
-            <X className="w-5 h-5 text-white" />
+        <div className="flex justify-between items-center px-6 py-5 border-b border-white/10">
+          <span className="text-white/90 font-bold tracking-wider text-sm">CONTROL CENTER</span>
+          <button onClick={() => setShowSettings(false)} className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors touch-manipulation">
+            <X className="w-5 h-5" />
           </button>
-          <div className="bg-blue-900/40 border border-blue-500/30 rounded-lg p-2 text-center text-[9px] font-bold text-blue-200 tracking-wider uppercase mt-8">
-            Tip: Ctrl+Click any slider to reset
-          </div>
         </div>
 
-        {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto min-h-0 px-6 pb-6 pt-4 flex flex-col gap-6 settings-scroll overscroll-contain">
+        {/* Floating Tab Navigation */}
+        <div className="px-4 pt-4 pb-2">
+           <div className="flex bg-black/20 p-1 rounded-2xl border border-white/5 shadow-inner">
+             <button onClick={() => setActiveTab('disk')} className={`flex-1 py-2.5 rounded-xl flex justify-center items-center transition-all duration-300 ${activeTab === 'disk' ? 'bg-white/20 shadow-sm text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}><Bookmark className="w-4 h-4"/></button>
+             <button onClick={() => setActiveTab('typo')} className={`flex-1 py-2.5 rounded-xl flex justify-center items-center transition-all duration-300 ${activeTab === 'typo' ? 'bg-white/20 shadow-sm text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}><Type className="w-4 h-4"/></button>
+             <button onClick={() => setActiveTab('cam')} className={`flex-1 py-2.5 rounded-xl flex justify-center items-center transition-all duration-300 ${activeTab === 'cam' ? 'bg-white/20 shadow-sm text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}><Camera className="w-4 h-4"/></button>
+             <button onClick={() => setActiveTab('fx')} className={`flex-1 py-2.5 rounded-xl flex justify-center items-center transition-all duration-300 ${activeTab === 'fx' ? 'bg-white/20 shadow-sm text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}><Layers className="w-4 h-4"/></button>
+             <button onClick={() => setActiveTab('chaos')} className={`flex-1 py-2.5 rounded-xl flex justify-center items-center transition-all duration-300 ${activeTab === 'chaos' ? 'bg-white/20 shadow-sm text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}><Zap className="w-4 h-4"/></button>
+           </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 pb-6 pt-2 settings-scroll">
           
-          {/* --- PRESET MANAGER --- */}
-          <div className="flex flex-col gap-2 bg-white/5 p-3 rounded-xl border border-white/10">
-            <label className="text-xs opacity-80 font-bold uppercase flex items-center text-yellow-400"><Bookmark className="w-4 h-4 mr-2"/> Preset Library</label>
-            <div className="flex gap-2">
-              <select 
-                value={activePreset} 
-                onChange={(e) => handleLoadPreset(e.target.value)}
-                className="flex-1 bg-[#1a1a1a] border border-gray-600 rounded-lg text-[10px] font-bold uppercase p-2 focus:outline-none text-white truncate"
-              >
-                <optgroup label="Built-in Mograph" className="bg-[#1a1a1a] text-white">
-                  {Object.keys(PRESET_LIBRARY).map(p => <option key={p} value={p} className="bg-[#1a1a1a] text-white">{p}</option>)}
-                </optgroup>
-                {Object.keys(customPresets).length > 0 && (
-                  <optgroup label="My Custom Presets" className="bg-[#1a1a1a] text-white">
-                    {Object.keys(customPresets).map(p => <option key={p} value={p} className="bg-[#1a1a1a] text-white">{p}</option>)}
+          {/* DISK MODULE */}
+          {activeTab === 'disk' && (
+            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex flex-col p-4 bg-white/5 rounded-2xl border border-white/5">
+                <span className="text-xs font-semibold text-white/60 mb-3 flex items-center gap-2"><FolderDown className="w-4 h-4" /> Load Blueprint</span>
+                <select value={activePreset} onChange={(e) => handleLoadPreset(e.target.value)} className="w-full bg-black/30 rounded-xl px-3 py-3 outline-none text-sm text-white border border-white/10 hover:border-white/20 transition-colors">
+                  <optgroup label="System Presets" className="bg-[#141518]">
+                    {Object.keys(PRESET_LIBRARY).map(p => <option key={p} value={p}>{p}</option>)}
                   </optgroup>
-                )}
-              </select>
-              <button onClick={handleSavePreset} className="bg-yellow-500/20 hover:bg-yellow-500/40 border border-yellow-500/50 p-2 rounded-lg text-yellow-400 transition-colors" title="Save Current as Preset">
-                <Save className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+                  {Object.keys(customPresets).length > 0 && (
+                    <optgroup label="User Tapes" className="bg-[#141518]">
+                      {Object.keys(customPresets).map(p => <option key={p} value={p}>{p}</option>)}
+                    </optgroup>
+                  )}
+                </select>
+                <GlassBtn onClick={handleSavePreset} className="mt-3 w-full" icon={Save}>Save Current State</GlassBtn>
+              </div>
 
-          {/* --- TYPOGRAPHY TRANSFORM --- */}
-          <div className="flex flex-col gap-3">
-            <label className="text-xs opacity-60 font-bold uppercase flex items-center"><Type className="w-4 h-4 mr-2"/> Typography Transform</label>
-            
-            <div className="flex flex-col gap-1">
-               <div className="flex gap-2 mb-1">
-                  <button onClick={() => setSettings({...settings, fontMode: 'dynamic'})} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.fontMode === 'dynamic' ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>Dynamic</button>
-                  <button onClick={() => setSettings({...settings, fontMode: 'manual'})} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.fontMode === 'manual' ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>Manual</button>
-                  <button onClick={() => setSettings({...settings, fontMode: 'system'})} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.fontMode === 'system' ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>System</button>
-               </div>
-               {settings.fontMode === 'manual' && (
-                  <select value={settings.manualFont} onChange={(e) => setSettings({...settings, manualFont: e.target.value})} className="w-full bg-[#1a1a1a] border border-gray-600 rounded text-[10px] p-2 text-white focus:outline-none">
-                    {FONTS_ALL.map(f => <option key={f} value={f} className="bg-[#1a1a1a] text-white">{f.replace('font-', '').toUpperCase()}</option>)}
-                  </select>
-               )}
-               {settings.fontMode === 'system' && (
-                  <input 
-                    type="text" 
-                    value={settings.customSystemFont || ''} 
-                    onChange={(e) => setSettings({...settings, customSystemFont: e.target.value})} 
-                    placeholder="e.g. Arial, Impact, Comic Sans MS" 
-                    title="Enter a comma-separated list of fonts"
-                    className="w-full bg-[#1a1a1a] border border-gray-600 rounded text-[10px] p-2 text-white focus:outline-none focus:border-gray-400 placeholder-gray-500" 
-                  />
-               )}
-            </div>
-
-            <div className="flex flex-col gap-1 mt-1">
-              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold text-green-400">Text Scale</span><span className="text-[10px] opacity-60 font-bold text-green-400">{settings.textScale.toFixed(1)}x</span></div>
-              <input type="range" min="0.3" max="3.0" step="0.1" value={settings.textScale} onChange={(e) => setSettings({...settings, textScale: parseFloat(e.target.value)})} onClick={(e) => handleSliderReset(e, 'textScale', 1.0)} className="w-full accent-green-400" />
-            </div>
-
-            <div className="flex flex-col gap-1 mt-1">
-              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold text-green-400">Word Spacing</span><span className="text-[10px] opacity-60 font-bold text-green-400">{settings.wordSpacing.toFixed(1)}x</span></div>
-              <input type="range" min="0.0" max="5.0" step="0.1" value={settings.wordSpacing} onChange={(e) => setSettings({...settings, wordSpacing: parseFloat(e.target.value)})} onClick={(e) => handleSliderReset(e, 'wordSpacing', 1.0)} className="w-full accent-green-400" />
-            </div>
-
-            <div className="flex flex-col gap-1 mt-1">
-              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold text-green-400">Line Spacing</span><span className="text-[10px] opacity-60 font-bold text-green-400">{settings.lineSpacing.toFixed(2)}x</span></div>
-              <input type="range" min="0.5" max="2.0" step="0.05" value={settings.lineSpacing} onChange={(e) => setSettings({...settings, lineSpacing: parseFloat(e.target.value)})} onClick={(e) => handleSliderReset(e, 'lineSpacing', 0.85)} className="w-full accent-green-400" />
-            </div>
-
-            <div className="flex flex-col gap-1 mt-1">
-              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold text-green-400">Words Per Line</span><span className="text-[10px] opacity-60 font-bold text-green-400">{settings.wordsPerLine === 0 ? 'Auto' : settings.wordsPerLine}</span></div>
-              <input type="range" min="0" max="15" step="1" value={settings.wordsPerLine} onChange={(e) => setSettings({...settings, wordsPerLine: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'wordsPerLine', 0)} className="w-full accent-green-400" />
-            </div>
-
-            <div className="flex flex-col gap-1 mt-1">
-               <label className="text-[10px] opacity-60 font-bold uppercase">Alignment</label>
-               <div className="flex gap-1">
-                  {['left', 'center', 'right', 'justify'].map(align => (
-                     <button key={align} onClick={() => setSettings({...settings, textAlign: align})} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.textAlign === align ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>{align}</button>
-                  ))}
-               </div>
-            </div>
-          </div>
-
-          {/* --- CAMERA OPTICS & FRAMING --- */}
-          <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
-            <label className="text-xs opacity-60 font-bold uppercase flex items-center"><Camera className="w-4 h-4 mr-2"/> Transform & 3D Camera</label>
-            
-            <div className="flex gap-2">
-              <button onClick={() => setSettings({...settings, cameraMode: 'auto'})} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.cameraMode === 'auto' ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>Auto Track</button>
-              <button onClick={() => setSettings({...settings, cameraMode: 'manual'})} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.cameraMode === 'manual' ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>Manual Edit</button>
-            </div>
-
-            {settings.cameraMode === 'manual' && (
-               <div className="flex flex-col gap-2 p-3 bg-white/5 rounded-xl border border-white/10 mt-1">
-                  <div className="flex justify-between items-center mb-1">
-                     <span className="text-[10px] opacity-80 uppercase font-bold text-blue-400">Relative Offsets</span>
-                     <button onClick={resetManualCamera} className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[8px] font-bold uppercase transition-colors text-white">Reset Center</button>
-                  </div>
-                  <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold">Pan X</span><span className="text-[10px] opacity-60 font-bold">{settings.manualPanX}px</span></div>
-                  <input type="range" min="-2000" max="2000" step="50" value={settings.manualPanX} onChange={(e)=>setSettings({...settings, manualPanX: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'manualPanX', 0)} className="accent-white" />
-                  <div className="flex justify-between mt-1"><span className="text-[10px] opacity-60 uppercase font-bold">Pan Y</span><span className="text-[10px] opacity-60 font-bold">{settings.manualPanY}px</span></div>
-                  <input type="range" min="-2000" max="2000" step="50" value={settings.manualPanY} onChange={(e)=>setSettings({...settings, manualPanY: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'manualPanY', 0)} className="accent-white" />
-                  <div className="flex justify-between mt-1"><span className="text-[10px] opacity-60 uppercase font-bold">Rot X (Tilt)</span><span className="text-[10px] opacity-60 font-bold">{settings.manualRotX}°</span></div>
-                  <input type="range" min="-90" max="90" step="5" value={settings.manualRotX} onChange={(e)=>setSettings({...settings, manualRotX: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'manualRotX', 0)} className="accent-white" />
-                  <div className="flex justify-between mt-1"><span className="text-[10px] opacity-60 uppercase font-bold">Rot Y (Pan)</span><span className="text-[10px] opacity-60 font-bold">{settings.manualRotY}°</span></div>
-                  <input type="range" min="-90" max="90" step="5" value={settings.manualRotY} onChange={(e)=>setSettings({...settings, manualRotY: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'manualRotY', 0)} className="accent-white" />
-                  <div className="flex justify-between mt-1"><span className="text-[10px] opacity-60 uppercase font-bold">Rot Z (Roll)</span><span className="text-[10px] opacity-60 font-bold">{settings.manualRotZ}°</span></div>
-                  <input type="range" min="-180" max="180" step="5" value={settings.manualRotZ} onChange={(e)=>setSettings({...settings, manualRotZ: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'manualRotZ', 0)} className="accent-white" />
-               </div>
-            )}
-
-            <div className="flex flex-col gap-1 mt-1">
-               <label className="text-[10px] opacity-60 font-bold uppercase">Spawn Anchor (X, Y)</label>
-               <input type="range" min="-1500" max="1500" step="50" value={settings.spawnAnchorX} onChange={(e)=>setSettings({...settings, spawnAnchorX: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'spawnAnchorX', 0)} className="accent-white mb-1" />
-               <input type="range" min="-1500" max="1500" step="50" value={settings.spawnAnchorY} onChange={(e)=>setSettings({...settings, spawnAnchorY: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'spawnAnchorY', 0)} className="accent-white" />
-            </div>
-
-            <div className="flex flex-col gap-1 mt-2">
-              <label className="text-[10px] opacity-60 font-bold uppercase">Aspect Ratio Output</label>
-              <div className="grid grid-cols-3 gap-1">
-                {['fullscreen', 'tiktok', 'youtube', 'cinema', 'imax', 'square'].map(ratio => (
-                  <button key={ratio} onClick={() => setSettings({...settings, aspectRatio: ratio})} className={`py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.aspectRatio === ratio ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>{ratio === 'fullscreen' ? 'Full' : ratio}</button>
-                ))}
+              <div className="flex flex-col p-4 bg-white/5 rounded-2xl border border-white/5">
+                <span className="text-xs font-semibold text-white/60 mb-3 flex items-center gap-2"><Globe className="w-4 h-4" /> Language Model</span>
+                <div className="grid grid-cols-3 gap-2">
+                   <GlassBtn active={(settings.languages || []).includes('en-US')} onClick={() => toggleLanguage('en-US')}>ENG</GlassBtn>
+                   <GlassBtn active={(settings.languages || []).includes('hi-IN')} onClick={() => toggleLanguage('hi-IN')}>HIN</GlassBtn>
+                   <GlassBtn active={(settings.languages || []).includes('gu-IN')} onClick={() => toggleLanguage('gu-IN')}>GUJ</GlassBtn>
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="flex flex-col gap-1 mt-1">
-              <label className="text-[10px] opacity-60 font-bold uppercase">Camera Lens (FOV)</label>
-              <div className="grid grid-cols-3 gap-1">
-                {Object.keys(LENS_OPTICS).map(lens => (
-                  <button key={lens} onClick={() => setSettings({...settings, cameraLens: lens})} className={`py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.cameraLens === lens ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>{lens}</button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1 mt-1">
-              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold text-blue-400">Manual Zoom</span><span className="text-[10px] opacity-60 font-bold text-blue-400">{settings.manualZoom.toFixed(1)}x</span></div>
-              <input type="range" min="0.6" max="2.0" step="0.1" value={settings.manualZoom} onChange={(e) => setSettings({...settings, manualZoom: parseFloat(e.target.value)})} onClick={(e) => handleSliderReset(e, 'manualZoom', 1.0)} className="w-full accent-blue-400" />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2 border-t border-white/10 pt-4">
-            <label className="text-xs opacity-60 font-bold uppercase flex items-center"><Monitor className="w-4 h-4 mr-2"/> Environment & Export</label>
-            <div className="grid grid-cols-5 gap-1 mb-1">
-              {['dark', 'white', 'vaporwave', 'plasma', 'custom'].map(bg => (
-                <button key={bg} onClick={() => setSettings({...settings, bgMode: bg})} className={`py-2 text-[8px] font-bold uppercase rounded transition-all ${settings.bgMode === bg ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>{bg}</button>
-              ))}
-            </div>
-            
-            {settings.bgMode === 'custom' && (
-               <label className="flex items-center justify-center w-full py-2 mt-1 mb-1 bg-white/10 hover:bg-white/20 border border-white/20 rounded cursor-pointer transition-colors">
-                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 mr-2 text-white"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                 <span className="text-[9px] font-bold uppercase text-white">{settings.customBgUrl ? 'Change Background' : 'Upload Image / Video'}</span>
-                 <input type="file" accept="image/*,video/*" className="hidden" onChange={handleCustomBgUpload} />
-               </label>
-            )}
-
-            <div className="grid grid-cols-2 gap-1">
-              <button onClick={() => setSettings({...settings, bgMode: 'chroma-green'})} className={`py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.bgMode === 'chroma-green' ? 'bg-[#00FF00] text-black shadow-[0_0_10px_#00FF00]' : 'bg-white/10 hover:bg-white/20'}`}>Chroma Green</button>
-              <button onClick={() => setSettings({...settings, bgMode: 'chroma-blue'})} className={`py-1.5 text-[9px] font-bold uppercase rounded transition-all ${settings.bgMode === 'chroma-blue' ? 'bg-[#0000FF] text-white shadow-[0_0_10px_#0000FF]' : 'bg-white/10 hover:bg-white/20'}`}>Chroma Blue</button>
-            </div>
-            
-            <div className="flex flex-col gap-1 mt-2">
-              <label className="text-[10px] opacity-60 font-bold uppercase flex items-center"><Layers className="w-3 h-3 mr-1"/> Texture Overlay</label>
-              <div className="grid grid-cols-4 gap-1">
-                {['none', 'halftone', 'crt', 'grunge'].map(tex => (
-                  <button key={tex} onClick={() => setSettings({...settings, textureOverlay: tex})} className={`py-1.5 text-[8px] font-bold uppercase rounded transition-all ${settings.textureOverlay === tex ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20'}`}>{tex}</button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
-            <label className="text-xs opacity-60 font-bold uppercase flex items-center"><Zap className="w-4 h-4 mr-2"/> Kinetic FX</label>
-            
-            <div className="grid grid-cols-2 gap-2">
-               <button onClick={() => setSettings({...settings, physicsEnabled: !settings.physicsEnabled})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.physicsEnabled ? 'bg-white text-black border-white' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>PHYSICS</button>
-               <button onClick={() => setSettings({...settings, momentumEnabled: !settings.momentumEnabled})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.momentumEnabled ? 'bg-white text-black border-white' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>MOMENTUM</button>
-               <button onClick={() => setSettings({...settings, neonGlow: !settings.neonGlow})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.neonGlow ? 'bg-[#FF00FF] text-white border-[#FF00FF] shadow-[0_0_15px_#FF00FF]' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>NEON GLOW</button>
-               <button onClick={() => setSettings({...settings, strobeFlicker: !settings.strobeFlicker})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.strobeFlicker ? 'bg-[#00FFFF] text-black border-[#00FFFF] shadow-[0_0_15px_#00FFFF]' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>STROBE</button>
-               <button onClick={() => setSettings({...settings, iconEngine: !settings.iconEngine})} className={`col-span-2 py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.iconEngine ? 'bg-yellow-400 text-black border-yellow-400 shadow-[0_0_15px_#FACC15]' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>GEOMETRY ENGINE</button>
-            </div>
-
-            <div className="flex flex-col gap-1 mt-2">
-              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold text-red-400">Glitch Intensity</span><span className="text-[10px] opacity-60 font-bold text-red-400">{settings.glitchLevel}</span></div>
-              <input type="range" min="0" max="10" value={settings.glitchLevel} onChange={(e) => setSettings({...settings, glitchLevel: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'glitchLevel', 2)} className="w-full accent-red-400" />
-            </div>
-
-            {/* 🔥 Granular Chaos Engine */}
-            <div className="flex flex-col gap-2 mt-2 p-3 bg-red-900/20 border border-red-500/30 rounded-xl">
-              <div className="flex justify-between items-center border-b border-red-500/30 pb-1.5 mb-1">
-                <span className="text-[10px] opacity-80 uppercase font-bold text-red-400">Chaos Engine</span>
-                <span className="text-[8px] opacity-60 font-bold text-red-300">CTRL+CLICK TO RESET</span>
+          {/* TYPOGRAPHY MODULE */}
+          {activeTab === 'typo' && (
+            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="grid grid-cols-2 gap-2">
+                <GlassBtn active={settings.fontMode === 'dynamic'} onClick={() => setSettings({...settings, fontMode: 'dynamic'})}>Randomize</GlassBtn>
+                <GlassBtn active={settings.fontMode === 'manual'} onClick={() => setSettings({...settings, fontMode: 'manual'})}>Specific Font</GlassBtn>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <div className="flex justify-between"><span className="text-[9px] opacity-70 uppercase font-bold text-red-300">RGB Split</span><span className="text-[9px] opacity-70 font-bold text-red-300">{settings.chaosRgbLevel}</span></div>
-                  <input type="range" min="0" max="10" step="1" value={settings.chaosRgbLevel} onChange={(e) => setSettings({...settings, chaosRgbLevel: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'chaosRgbLevel', 0)} className="w-full accent-red-500" />
+              {settings.fontMode === 'manual' && (
+                <div className="flex flex-col p-4 bg-white/5 rounded-2xl border border-white/5">
+                  <select value={settings.manualFont} onChange={(e) => setSettings({...settings, manualFont: e.target.value})} className="w-full bg-black/30 rounded-xl px-3 py-3 outline-none text-sm text-white border border-white/10 hover:border-white/20 transition-colors mb-3">
+                    {FONTS_ALL.map(f => <option key={f} value={f} className="bg-[#141518]">{f.replace('font-', '').toUpperCase()}</option>)}
+                    {settings.customGoogleFonts.map(f => <option key={f} value={f} className="bg-[#141518]">{f.toUpperCase()}</option>)}
+                  </select>
+                  <div className="flex items-center gap-2">
+                     <input type="text" id="newGoogleFontInput" placeholder="Enter Google Font Name" className="flex-1 bg-black/30 text-xs px-3 py-2.5 rounded-xl border border-white/10 focus:outline-none focus:border-white/30 transition-colors placeholder:text-white/30" onKeyDown={(e) => { if (e.key === 'Enter') handleInstallFont(e.target.value, 'newGoogleFontInput'); }} />
+                     <button onClick={() => handleInstallFont(document.getElementById('newGoogleFontInput').value, 'newGoogleFontInput')} className="text-[10px] font-bold px-3 py-2.5 bg-white text-black rounded-xl hover:bg-white/90 transition-colors touch-manipulation">Fetch</button>
+                  </div>
                 </div>
-                
-                <div className="flex flex-col gap-1">
-                  <div className="flex justify-between"><span className="text-[9px] opacity-70 uppercase font-bold text-red-300">VHS Track</span><span className="text-[9px] opacity-70 font-bold text-red-300">{settings.chaosVhsLevel}</span></div>
-                  <input type="range" min="0" max="10" step="1" value={settings.chaosVhsLevel} onChange={(e) => setSettings({...settings, chaosVhsLevel: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'chaosVhsLevel', 0)} className="w-full accent-red-500" />
-                </div>
+              )}
 
-                <div className="flex flex-col gap-1">
-                  <div className="flex justify-between"><span className="text-[9px] opacity-70 uppercase font-bold text-red-300">Invert</span><span className="text-[9px] opacity-70 font-bold text-red-300">{settings.chaosInvertLevel}</span></div>
-                  <input type="range" min="0" max="10" step="1" value={settings.chaosInvertLevel} onChange={(e) => setSettings({...settings, chaosInvertLevel: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'chaosInvertLevel', 0)} className="w-full accent-red-500" />
-                </div>
+              <div className="grid grid-cols-2 gap-3">
+                <GlassSlider label="Text Size" value={settings.textScale} min="0.3" max="3.0" step="0.1" displayVal={settings.textScale.toFixed(1)} onChange={(e) => resetParam('textScale', parseFloat(e.target.value))} onReset={() => resetParam('textScale', 1.0)} />
+                <GlassSlider label="Word Gap" value={settings.wordSpacing} min="0.0" max="5.0" step="0.1" displayVal={settings.wordSpacing.toFixed(1)} onChange={(e) => resetParam('wordSpacing', parseFloat(e.target.value))} onReset={() => resetParam('wordSpacing', 1.0)} />
+                <GlassSlider label="Line Gap" value={settings.lineSpacing} min="0.5" max="2.0" step="0.05" displayVal={settings.lineSpacing.toFixed(2)} onChange={(e) => resetParam('lineSpacing', parseFloat(e.target.value))} onReset={() => resetParam('lineSpacing', 0.85)} />
+                <GlassSlider label="Auto-Wrap" value={settings.wordsPerLine} min="0" max="15" step="1" displayVal={settings.wordsPerLine === 0 ? 'AUTO' : settings.wordsPerLine} onChange={(e) => resetParam('wordsPerLine', parseInt(e.target.value))} onReset={() => resetParam('wordsPerLine', 0)} />
+              </div>
 
-                <div className="flex flex-col gap-1">
-                  <div className="flex justify-between"><span className="text-[9px] opacity-70 uppercase font-bold text-red-300">Shake</span><span className="text-[9px] opacity-70 font-bold text-red-300">{settings.chaosShakeLevel}</span></div>
-                  <input type="range" min="0" max="10" step="1" value={settings.chaosShakeLevel} onChange={(e) => setSettings({...settings, chaosShakeLevel: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'chaosShakeLevel', 0)} className="w-full accent-red-500" />
-                </div>
+              <div className="flex flex-col p-4 bg-white/5 rounded-2xl border border-white/5">
+                 <span className="text-xs font-semibold text-white/60 mb-3">Paragraph Alignment</span>
+                 <div className="grid grid-cols-4 gap-2">
+                    {['left', 'center', 'right', 'justify'].map(align => (
+                       <GlassBtn key={align} active={settings.textAlign === align} onClick={() => resetParam('textAlign', align)} className="capitalize">{align.substring(0,4)}</GlassBtn>
+                    ))}
+                 </div>
+              </div>
+
+              <div className="flex flex-col p-4 bg-white/5 rounded-2xl border border-white/5">
+                 <span className="text-xs font-semibold text-white/60 mb-3 flex items-center gap-2"><Palette className="w-4 h-4"/> Color Engine</span>
+                 <div className="grid grid-cols-4 gap-2 mb-4">
+                    {['auto', 'solid', 'palette', 'gradient'].map(mode => (
+                       <GlassBtn key={mode} active={settings.colorMode === mode} onClick={() => resetParam('colorMode', mode)} className="capitalize">{mode}</GlassBtn>
+                    ))}
+                 </div>
+                 {settings.colorMode !== 'auto' && (
+                    <div className="flex gap-3">
+                       <div className="flex flex-col flex-1 items-center gap-2"><span className="text-[10px] text-white/50 font-bold">Base</span><input type="color" value={settings.customColor1} onChange={(e) => resetParam('customColor1', e.target.value)} className="w-full h-8 rounded-lg cursor-pointer bg-transparent border-none outline-none overflow-hidden" /></div>
+                       {(settings.colorMode === 'palette' || settings.colorMode === 'gradient') && (
+                         <div className="flex flex-col flex-1 items-center gap-2"><span className="text-[10px] text-white/50 font-bold">Mid</span><input type="color" value={settings.customColor2} onChange={(e) => resetParam('customColor2', e.target.value)} className="w-full h-8 rounded-lg cursor-pointer bg-transparent border-none outline-none overflow-hidden" /></div>
+                       )}
+                       {(settings.colorMode === 'palette' || settings.colorMode === 'gradient') && (
+                         <div className="flex flex-col flex-1 items-center gap-2"><span className="text-[10px] text-white/50 font-bold">End</span><input type="color" value={settings.customColor3} onChange={(e) => resetParam('customColor3', e.target.value)} className="w-full h-8 rounded-lg cursor-pointer bg-transparent border-none outline-none overflow-hidden" /></div>
+                       )}
+                    </div>
+                 )}
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                 <GlassBtn active={settings.fxOutline} onClick={() => resetParam('fxOutline', !settings.fxOutline)}>Stroke</GlassBtn>
+                 <GlassBtn active={settings.fxShadow} onClick={() => resetParam('fxShadow', !settings.fxShadow)}>Shadow</GlassBtn>
+                 <GlassBtn active={settings.fxHighlight} onClick={() => resetParam('fxHighlight', !settings.fxHighlight)}>Marker</GlassBtn>
               </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
-            <label className="text-xs opacity-60 font-bold uppercase flex items-center"><Type className="w-4 h-4 mr-2"/> Pop-Art Text FX</label>
-            <div className="grid grid-cols-3 gap-2">
-               <button onClick={() => setSettings({...settings, fxOutline: !settings.fxOutline})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.fxOutline ? 'bg-white text-black border-white' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>OUTLINE</button>
-               <button onClick={() => setSettings({...settings, fxShadow: !settings.fxShadow})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.fxShadow ? 'bg-white text-black border-white' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>SHADOW</button>
-               <button onClick={() => setSettings({...settings, fxHighlight: !settings.fxHighlight})} className={`py-2 text-[10px] font-bold tracking-wider rounded-lg transition-colors border ${settings.fxHighlight ? 'bg-white text-black border-white' : 'border-white/30 text-white/70 hover:bg-white/20 hover:text-white'}`}>MARKER</button>
-            </div>
-          </div>
+          {/* CAMERA MODULE */}
+          {activeTab === 'cam' && (
+            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="grid grid-cols-2 gap-2">
+                <GlassBtn active={settings.cameraMode === 'auto'} onClick={() => resetParam('cameraMode', 'auto')} icon={Activity}>Auto Track</GlassBtn>
+                <GlassBtn active={settings.cameraMode === 'manual'} onClick={() => resetParam('cameraMode', 'manual')} icon={Sliders}>Static Rig</GlassBtn>
+              </div>
 
-          <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
-            <label className="text-xs opacity-60 font-bold uppercase flex items-center"><Globe className="w-4 h-4 mr-2"/> Languages</label>
-            <div className="flex gap-2">
-               <button onClick={() => toggleLanguage('en-US')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg border ${(settings.languages || []).includes('en-US') ? 'bg-white text-black border-white' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>ENG</button>
-               <button onClick={() => toggleLanguage('hi-IN')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg border ${(settings.languages || []).includes('hi-IN') ? 'bg-white text-black border-white' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>HIN</button>
-               <button onClick={() => toggleLanguage('gu-IN')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg border ${(settings.languages || []).includes('gu-IN') ? 'bg-white text-black border-white' : 'border-white/20 text-white/50 hover:bg-white/10'}`}>GUJ</button>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
-            <label className="text-xs opacity-60 font-bold uppercase">Focus & Pacing</label>
-            
-            <div className="flex flex-col gap-1">
-              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold text-yellow-400">Anim Speed</span><span className="text-[10px] opacity-60 font-bold text-yellow-400">{(settings.animationSpeed || 1).toFixed(1)}x</span></div>
-              <input type="range" min="0.2" max="3.0" step="0.1" value={settings.animationSpeed} onChange={(e) => setSettings({...settings, animationSpeed: parseFloat(e.target.value)})} onClick={(e) => handleSliderReset(e, 'animationSpeed', 1.0)} className="w-full accent-yellow-400" />
-            </div>
-
-            <div className="flex flex-col gap-1 mt-1">
-              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold">Fade Rate</span><span className="text-[10px] opacity-60 font-bold">{Math.round((settings.fadeRate || 0.15) * 100)}%</span></div>
-              <input type="range" min="0.05" max="0.5" step="0.05" value={settings.fadeRate} onChange={(e) => setSettings({...settings, fadeRate: parseFloat(e.target.value)})} onClick={(e) => handleSliderReset(e, 'fadeRate', 0.15)} className="w-full accent-white" />
-            </div>
-            
-            <div className="flex flex-col gap-1 mt-1">
-              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold">Focus Blur</span><span className="text-[10px] opacity-60 font-bold">{settings.blurIntensity}px</span></div>
-              <input type="range" min="0" max="20" step="1" value={settings.blurIntensity} onChange={(e) => setSettings({...settings, blurIntensity: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'blurIntensity', 4)} className="w-full accent-white" />
-            </div>
-
-            <div className="flex flex-col gap-1 mt-1">
-              <div className="flex justify-between"><span className="text-[10px] opacity-60 uppercase font-bold">Word Grouping</span><span className="text-[10px] opacity-60 font-bold">{settings.wordGrouping === 6 ? 'Infinity' : settings.wordGrouping}</span></div>
-              <input type="range" min="1" max="6" step="1" value={settings.wordGrouping} onChange={(e) => setSettings({...settings, wordGrouping: parseInt(e.target.value)})} onClick={(e) => handleSliderReset(e, 'wordGrouping', 1)} className="w-full accent-white" />
-            </div>
-
-            {settings.wordGrouping === 6 && (
-              <div className="flex flex-col gap-2 p-3 bg-white/5 rounded-xl border border-white/10 mt-1">
-                 <span className="text-[10px] opacity-80 uppercase font-bold text-yellow-400 mb-1">Infinity Mode Styling</span>
-                 <div className="flex justify-between items-center">
-                   <span className="text-[10px] opacity-60 uppercase font-bold">Text Color</span>
-                   <input type="color" value={settings.manualTextColor} onChange={(e) => setSettings({...settings, manualTextColor: e.target.value})} className="w-6 h-6 rounded cursor-pointer bg-transparent border-none" />
+              <div className="flex flex-col p-4 bg-white/5 rounded-2xl border border-white/5">
+                 <span className="text-xs font-semibold text-white/60 mb-3 flex items-center gap-2"><Monitor className="w-4 h-4"/> Aspect Ratio</span>
+                 <div className="grid grid-cols-3 gap-2">
+                    {['fullscreen', 'tiktok', 'youtube', 'cinema', 'imax', 'square'].map(ratio => (
+                       <GlassBtn key={ratio} active={settings.aspectRatio === ratio} onClick={() => resetParam('aspectRatio', ratio)} className="capitalize">{ratio === 'fullscreen' ? 'Full' : ratio}</GlassBtn>
+                    ))}
                  </div>
-                 <div className="flex justify-between items-center">
-                   <span className="text-[10px] opacity-60 uppercase font-bold">Shadow Color</span>
-                   <input type="color" value={settings.manualShadowColor} onChange={(e) => setSettings({...settings, manualShadowColor: e.target.value})} className="w-6 h-6 rounded cursor-pointer bg-transparent border-none" />
+              </div>
+
+              <div className="flex flex-col p-4 bg-white/5 rounded-2xl border border-white/5">
+                 <span className="text-xs font-semibold text-white/60 mb-3 flex items-center gap-2"><Camera className="w-4 h-4"/> Optics (FOV)</span>
+                 <div className="grid grid-cols-3 gap-2">
+                    {Object.keys(LENS_OPTICS).map(lens => (
+                       <GlassBtn key={lens} active={settings.cameraLens === lens} onClick={() => resetParam('cameraLens', lens)}>{lens}</GlassBtn>
+                    ))}
                  </div>
-                 <div className="flex flex-col gap-1 mt-1">
-                   <div className="flex justify-between items-center">
-                     <span className="text-[10px] opacity-60 uppercase font-bold">Shadow Opacity</span>
-                     <span className="text-[10px] opacity-60 font-bold">{(settings.manualShadowOpacity || 0.8).toFixed(1)}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <GlassSlider label="Zoom Multiplier" value={settings.manualZoom} min="0.6" max="2.0" step="0.1" displayVal={settings.manualZoom.toFixed(1)} onChange={(e) => resetParam('manualZoom', parseFloat(e.target.value))} onReset={() => resetParam('manualZoom', 1.0)} />
+                <div className="col-span-1 hidden sm:block"></div>
+                <GlassSlider label="Spawn X Anchor" value={settings.spawnAnchorX} min="-1500" max="1500" step="50" onChange={(e) => resetParam('spawnAnchorX', parseInt(e.target.value))} onReset={() => resetParam('spawnAnchorX', 0)} />
+                <GlassSlider label="Spawn Y Anchor" value={settings.spawnAnchorY} min="-1500" max="1500" step="50" onChange={(e) => resetParam('spawnAnchorY', parseInt(e.target.value))} onReset={() => resetParam('spawnAnchorY', 0)} />
+              </div>
+
+              {settings.cameraMode === 'manual' && (
+                <div className="grid grid-cols-2 gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl">
+                   <div className="col-span-2 flex justify-between items-center mb-1">
+                     <span className="text-xs font-semibold text-white/90 flex items-center gap-2"><RotateCcw className="w-4 h-4"/> Rig Offsets</span>
+                     <button onClick={resetManualCamera} className="text-[10px] uppercase font-bold text-white/50 hover:text-white transition-colors">Reset Rig</button>
                    </div>
-                   <input type="range" min="0" max="1" step="0.1" value={settings.manualShadowOpacity} onChange={(e) => setSettings({...settings, manualShadowOpacity: parseFloat(e.target.value)})} onClick={(e) => handleSliderReset(e, 'manualShadowOpacity', 0.8)} className="w-full accent-yellow-400" />
+                   <GlassSlider label="Pan X" value={settings.manualPanX} min="-2000" max="2000" step="50" onChange={(e) => resetParam('manualPanX', parseInt(e.target.value))} onReset={() => resetParam('manualPanX', 0)} />
+                   <GlassSlider label="Pan Y" value={settings.manualPanY} min="-2000" max="2000" step="50" onChange={(e) => resetParam('manualPanY', parseInt(e.target.value))} onReset={() => resetParam('manualPanY', 0)} />
+                   <GlassSlider label="Tilt X" value={settings.manualRotX} min="-90" max="90" step="5" onChange={(e) => resetParam('manualRotX', parseInt(e.target.value))} onReset={() => resetParam('manualRotX', 0)} />
+                   <GlassSlider label="Pan Y" value={settings.manualRotY} min="-90" max="90" step="5" onChange={(e) => resetParam('manualRotY', parseInt(e.target.value))} onReset={() => resetParam('manualRotY', 0)} />
+                   <GlassSlider label="Roll Z" value={settings.manualRotZ} min="-180" max="180" step="5" onChange={(e) => resetParam('manualRotZ', parseInt(e.target.value))} onReset={() => resetParam('manualRotZ', 0)} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* FX MODULE */}
+          {activeTab === 'fx' && (
+            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex flex-col p-4 bg-white/5 rounded-2xl border border-white/5">
+                 <span className="text-xs font-semibold text-white/60 mb-3 flex items-center gap-2"><Layers className="w-4 h-4"/> Canvas Environment</span>
+                 <div className="grid grid-cols-3 gap-2 mb-3">
+                    {['dark', 'white', 'vaporwave', 'plasma', 'chroma-green', 'chroma-blue', 'custom'].map(bg => (
+                       <GlassBtn key={bg} active={settings.bgMode === bg} onClick={() => resetParam('bgMode', bg)} className="capitalize">{bg.replace('chroma-', 'Key ')}</GlassBtn>
+                    ))}
+                 </div>
+                 {settings.bgMode === 'custom' && (
+                    <label className="flex items-center justify-center w-full py-3 mt-1 bg-black/30 border border-white/10 hover:border-white/30 rounded-xl cursor-pointer transition-colors group">
+                       <span className="text-[10px] font-bold uppercase tracking-widest text-white/60 group-hover:text-white transition-colors">Select Media</span>
+                       <input type="file" accept="image/*,video/*" className="hidden" onChange={handleCustomBgUpload} />
+                    </label>
+                 )}
+              </div>
+
+              <div className="flex flex-col p-4 bg-white/5 rounded-2xl border border-white/5">
+                 <span className="text-xs font-semibold text-white/60 mb-3">Film Textures</span>
+                 <div className="grid grid-cols-4 gap-2">
+                    {['none', 'halftone', 'crt', 'grunge'].map(tex => (
+                       <GlassBtn key={tex} active={settings.textureOverlay === tex} onClick={() => resetParam('textureOverlay', tex)} className="capitalize">{tex.substring(0,4)}</GlassBtn>
+                    ))}
                  </div>
               </div>
-            )}
-          </div>
+
+              <div className="flex flex-col p-4 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-2xl border border-indigo-500/20">
+                 <span className="text-xs font-bold text-indigo-300 mb-3 flex items-center gap-2"><Zap className="w-4 h-4"/> Generative Engines</span>
+                 <div className="grid grid-cols-2 gap-3">
+                    {ENGINES.map(eng => {
+                       const val = settings.engineIntensities[eng.id] || 0;
+                       return (
+                          <GlassSlider key={eng.id} label={eng.label.substring(0,10)} value={val} min="0" max="10" step="1" onChange={(e) => setSettings({...settings, engineIntensities: {...settings.engineIntensities, [eng.id]: parseInt(e.target.value)}})} onReset={() => setSettings({...settings, engineIntensities: {...settings.engineIntensities, [eng.id]: 0}})} />
+                       );
+                    })}
+                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* CHAOS MODULE */}
+          {activeTab === 'chaos' && (
+            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="grid grid-cols-2 gap-2">
+                 <GlassBtn active={settings.physicsEnabled} onClick={() => resetParam('physicsEnabled', !settings.physicsEnabled)}>Collision Physics</GlassBtn>
+                 <GlassBtn active={settings.momentumEnabled} onClick={() => resetParam('momentumEnabled', !settings.momentumEnabled)}>Momentum</GlassBtn>
+                 <GlassBtn active={settings.neonGlow} onClick={() => resetParam('neonGlow', !settings.neonGlow)}>Neon Bloom</GlassBtn>
+                 <GlassBtn active={settings.strobeFlicker} onClick={() => resetParam('strobeFlicker', !settings.strobeFlicker)}>Strobe Flash</GlassBtn>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                 <GlassSlider label="Spawn Speed" value={settings.animationSpeed} min="0.2" max="3.0" step="0.1" displayVal={settings.animationSpeed.toFixed(1)} onChange={(e) => resetParam('animationSpeed', parseFloat(e.target.value))} onReset={() => resetParam('animationSpeed', 1.0)} />
+                 <GlassSlider label="Decay Rate" value={settings.fadeRate} min="0.05" max="0.5" step="0.05" displayVal={Math.round(settings.fadeRate*100)} onChange={(e) => resetParam('fadeRate', parseFloat(e.target.value))} onReset={() => resetParam('fadeRate', 0.15)} />
+                 <GlassSlider label="Depth Blur" value={settings.blurIntensity} min="0" max="20" step="1" onChange={(e) => resetParam('blurIntensity', parseInt(e.target.value))} onReset={() => resetParam('blurIntensity', 4)} />
+                 <GlassSlider label="Cluster Size" value={settings.wordGrouping} min="1" max="6" step="1" displayVal={settings.wordGrouping === 6 ? 'INF' : settings.wordGrouping} onChange={(e) => resetParam('wordGrouping', parseInt(e.target.value))} onReset={() => resetParam('wordGrouping', 1)} />
+              </div>
+
+              <div className="flex flex-col gap-3 p-4 bg-red-500/5 border border-red-500/20 rounded-2xl">
+                 <span className="text-xs font-bold text-red-400 flex items-center gap-2"><AlertCircle className="w-4 h-4" /> Signal Degradation</span>
+                 <div className="grid grid-cols-2 gap-3">
+                   <GlassSlider label="Glitch" value={settings.glitchLevel} min="0" max="10" step="1" onChange={(e) => resetParam('glitchLevel', parseInt(e.target.value))} onReset={() => resetParam('glitchLevel', 2)} />
+                   <GlassSlider label="RGB Split" value={settings.chaosRgbLevel} min="0" max="10" step="1" onChange={(e) => resetParam('chaosRgbLevel', parseInt(e.target.value))} onReset={() => resetParam('chaosRgbLevel', 0)} />
+                   <GlassSlider label="VHS Warp" value={settings.chaosVhsLevel} min="0" max="10" step="1" onChange={(e) => resetParam('chaosVhsLevel', parseInt(e.target.value))} onReset={() => resetParam('chaosVhsLevel', 0)} />
+                   <GlassSlider label="Invert" value={settings.chaosInvertLevel} min="0" max="10" step="1" onChange={(e) => resetParam('chaosInvertLevel', parseInt(e.target.value))} onReset={() => resetParam('chaosInvertLevel', 0)} />
+                   <GlassSlider label="Shake" value={settings.chaosShakeLevel} min="0" max="10" step="1" onChange={(e) => resetParam('chaosShakeLevel', parseInt(e.target.value))} onReset={() => resetParam('chaosShakeLevel', 0)} />
+                 </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       {error && !isFullscreen && (
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-red-900/90 text-white px-6 py-3 rounded-xl flex items-center shadow-2xl z-50 backdrop-blur-md border border-red-500/50">
-          <AlertCircle className="w-5 h-5 mr-3" />
-          <p className="text-sm font-bold tracking-wide">{error}</p>
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-red-500/80 text-white backdrop-blur-3xl px-6 py-4 rounded-2xl flex items-center shadow-2xl z-50 ui-font w-[90vw] sm:w-auto text-center border border-red-400/50">
+          <p className="text-sm font-semibold tracking-wide">{error}</p>
         </div>
       )}
 
-      {/* UI Bottom Controls */}
-      <div className={`absolute bottom-8 left-0 right-0 flex justify-center items-center space-x-6 z-50 transition-all duration-500 ${(!isFullscreen && (showUI || showSettings)) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12 pointer-events-none'}`}>
-        <button onClick={handleRecordToggle} title="Record Transparent Video" className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${isRecording ? 'bg-red-600 border-red-500 text-white animate-pulse' : isWhite ? 'bg-gray-200 hover:bg-gray-300 border-gray-400 text-black hover:text-red-600 shadow-lg' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white hover:text-red-400'}`}>
-          {isRecording ? <StopCircle className="w-4 h-4" /> : <Video className="w-5 h-5" />}
+      {/* --- FLOATING PILL DOCK --- */}
+      <div className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center p-2 bg-white/10 backdrop-blur-3xl border border-white/20 rounded-full shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] z-50 transition-all duration-500 ui-font ${(!isFullscreen && (showUI || showSettings)) ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 pointer-events-none scale-95'}`}>
+        
+        <button 
+          onClick={handleRecordToggle} 
+          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-full text-xs font-bold transition-all touch-manipulation ${isRecording ? 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+        >
+          {isRecording ? <StopCircle className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+          <span className="hidden sm:inline">{isRecording ? 'REC' : 'Record'}</span>
         </button>
 
-        <button onClick={toggleListening} className={`flex items-center justify-center w-16 h-16 rounded-full shadow-2xl transition-all duration-300 ${isListening ? 'bg-red-600 hover:bg-red-500 scale-110 animate-pulse text-white' : isWhite ? 'bg-gray-200 hover:bg-gray-300 border-gray-400 text-black shadow-lg' : 'bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white'}`}>
-          {isListening ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
+        <div className="w-px h-6 bg-white/10 mx-1"></div>
+
+        <button 
+          onClick={toggleListening} 
+          className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-bold transition-all touch-manipulation shadow-lg ${isListening ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.4)] scale-105' : 'bg-white/10 text-white hover:bg-white/20'}`}
+        >
+          {isListening ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+          <span>{isListening ? 'Listening' : 'Start'}</span>
         </button>
 
-        <button onClick={toggleFullscreen} className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${isWhite ? 'bg-gray-200 hover:bg-gray-300 border-gray-400 text-black shadow-lg' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'}`}>
-          {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+        <div className="w-px h-6 bg-white/10 mx-1"></div>
+
+        <button 
+          onClick={toggleFullscreen} 
+          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-full text-xs font-bold transition-all touch-manipulation ${isFullscreen ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+        >
+          {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+          <span className="hidden sm:inline">Frame</span>
         </button>
 
-        <button onClick={() => setShowSettings(!showSettings)} className={`flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all ${showSettings ? 'bg-white text-black border-white' : isWhite ? 'bg-gray-200 hover:bg-gray-300 border-gray-400 text-black shadow-lg' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'}`}>
-          <Sliders className="w-5 h-5" />
+        <button 
+          onClick={() => setShowSettings(!showSettings)} 
+          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-full text-xs font-bold transition-all touch-manipulation ml-1 ${showSettings ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+        >
+          <Sliders className="w-4 h-4" />
+          <span className="hidden sm:inline">Tune</span>
         </button>
       </div>
 
       {!isListening && words.length === 0 && !error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none z-40">
           <h1 className={`text-6xl md:text-8xl font-black font-montserrat tracking-tighter mb-4 opacity-80 ${isWhite ? 'text-black' : ''}`}>KINETIC<br/>VOICE</h1>
-          <p className={`text-xl font-bold font-inter tracking-widest uppercase opacity-50 ${isWhite ? 'text-black' : ''}`}>Click Mic to Start Mograph</p>
+          <p className={`text-sm md:text-base font-semibold tracking-widest uppercase opacity-50 ui-font ${isWhite ? 'text-black' : ''}`}>Click Start to Begin Engine</p>
         </div>
       )}
     </div>
