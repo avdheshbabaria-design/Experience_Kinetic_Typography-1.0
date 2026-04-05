@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Maximize, Minimize, AlertCircle, Sliders, Activity, Zap, Type, Globe, Camera, Monitor, X, Save, Bookmark, Video, StopCircle, Layers, Palette, FolderDown, RotateCcw } from 'lucide-react';
+import { Mic, MicOff, Maximize, Minimize, AlertCircle, Sliders, Activity, Zap, Type, Globe, Camera, Monitor, X, Save, Bookmark, Video, StopCircle, Layers, Palette, FolderDown, RotateCcw, Play } from 'lucide-react';
 
 // 🔥 Dual-Vault Deduplication Engine
 const mergeTranscripts = (base, addition) => {
@@ -52,7 +52,7 @@ const mergeTranscripts = (base, addition) => {
 // --- CSS STYLES & FONTS ---
 const getGlobalStyles = (speed, customFonts = []) => `
   ${customFonts.map(f => `@import url('https://fonts.googleapis.com/css2?family=${f.replace(/ /g, '+')}&display=swap');`).join('\n')}
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Anton&family=Bebas+Neue&family=Bodoni+Moda:ital,opsz,wght@0,6..96,900;1,6..96,900&family=Montserrat:ital,wght@0,900;1,900&family=VT323&family=Noto+Sans+Devanagari:wght@900&family=Noto+Sans+Gujarati:wght@900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Anton&family=Bebas+Neue&family=Bodoni+Moda:ital,opsz,wght@0,6..96,900;1,6..96,900&family=Montserrat:ital,wght@0,900;1,900&family=VT323&family=Noto+Sans+Devanagari:wght@900&family=Noto+Sans+Gujarati:wght@900&display=swap');
 
   .kinetic-wrapper { --speed: ${speed || 1}; }
 
@@ -147,6 +147,10 @@ const getGlobalStyles = (speed, customFonts = []) => `
   .settings-scroll::-webkit-scrollbar-track { background: transparent; }
   .settings-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
   .settings-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+
+  /* LANDING PAGE ANIMATIONS */
+  @keyframes slowPan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+  .landing-bg { background: linear-gradient(-45deg, #050505, #110e17, #050505, #081017); background-size: 400% 400%; animation: slowPan 20s ease infinite; }
 `;
 
 // --- UI COMPONENTS (MODERN GLASSMORPHISM) ---
@@ -270,7 +274,8 @@ const PRESET_LIBRARY = {
   "Pop-Art Poster": { ...DEFAULT_BASE_SETTINGS, bgMode: 'white', textureOverlay: 'halftone', fxOutline: true, fxShadow: true, fontMode: 'manual', manualFont: 'font-anton', textScale: 1.8, wordGrouping: 1, engineIntensities: { popart: 8, geometry: 3 } }
 };
 
-export default function App() {
+// --- MAIN ENGINE COMPONENT ---
+function KineticEngine() {
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState('');
   const [words, setWords] = useState([]);
@@ -1185,13 +1190,64 @@ export default function App() {
           <span className="hidden sm:inline">Tune</span>
         </button>
       </div>
-
-      {!isListening && words.length === 0 && !error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none z-40">
-          <h1 className={`text-6xl md:text-8xl font-black font-montserrat tracking-tighter mb-4 opacity-80 ${isWhite ? 'text-black' : ''}`}>KINETIC<br/>VOICE</h1>
-          <p className={`text-sm md:text-base font-semibold tracking-widest uppercase opacity-50 ui-font ${isWhite ? 'text-black' : ''}`}>Click Start to Begin Engine</p>
-        </div>
-      )}
     </div>
   );
+}
+
+// --- GATEWAY LANDING PAGE ---
+const LandingPage = ({ onEnter }) => {
+  return (
+    <div className="relative w-full h-screen flex flex-col items-center justify-center overflow-hidden font-sans text-white select-none landing-bg">
+      <style>{getGlobalStyles(1, [])}</style>
+      
+      {/* Subtle grid/noise overlay */}
+      <div className="absolute inset-0 z-0 opacity-10 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.8)_1px,transparent_1px)]" style={{ backgroundSize: '40px 40px' }}></div>
+
+      {/* Floating Ambient Orbs */}
+      <div className="absolute top-[10%] left-[20%] w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
+      <div className="absolute bottom-[10%] right-[20%] w-[30rem] h-[30rem] bg-rose-500/20 rounded-full blur-[150px] pointer-events-none animate-pulse" style={{ animationDelay: '2s' }}></div>
+
+      <div className="z-10 flex flex-col items-center text-center">
+         <div className="flex items-center gap-3 mb-6 opacity-60">
+            <Mic className="w-4 h-4" />
+            <span className="ui-font text-[10px] sm:text-xs font-semibold tracking-[0.3em] uppercase">Audio-Reactive Typography Engine</span>
+         </div>
+
+         <h1 className="text-6xl sm:text-7xl md:text-9xl font-black tracking-tighter mb-4 drop-shadow-2xl" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+            KINETIC<br/>VOICE
+         </h1>
+
+         <p className="text-base sm:text-lg md:text-xl font-light text-white/60 mb-12 max-w-xl px-6 ui-font leading-relaxed">
+            A real-time, browser-based motion graphics engine driven entirely by your speech. Speak to generate art.
+         </p>
+
+         <button
+            onClick={onEnter}
+            className="group relative px-8 py-4 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-full flex items-center gap-3 transition-all duration-500 hover:bg-white/20 hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.15)] focus:outline-none touch-manipulation"
+         >
+            <span className="ui-font font-bold tracking-widest text-sm uppercase">Initialize System</span>
+            <Activity className="w-4 h-4 opacity-70 group-hover:opacity-100 group-hover:animate-pulse" />
+         </button>
+
+         <div className="absolute bottom-8 flex gap-4 sm:gap-8 opacity-40 ui-font font-semibold text-[9px] sm:text-[10px] tracking-widest uppercase">
+            <span>v2.5.0</span>
+            <span className="hidden sm:inline">•</span>
+            <span>Web Speech API</span>
+            <span className="hidden sm:inline">•</span>
+            <span>Zero Latency Engine</span>
+         </div>
+      </div>
+    </div>
+  );
+}
+
+// --- ENTRY POINT CONTROLLER ---
+export default function App() {
+  const [hasEntered, setHasEntered] = useState(false);
+
+  if (!hasEntered) {
+    return <LandingPage onEnter={() => setHasEntered(true)} />;
+  }
+
+  return <KineticEngine />;
 }
